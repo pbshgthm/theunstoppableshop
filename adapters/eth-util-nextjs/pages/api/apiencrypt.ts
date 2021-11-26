@@ -16,7 +16,7 @@ export default function handler(
     const apiPublicKey = Buffer.from(publicKeyStr).toString()
 
     const encryptedText = encryptConst(plainText, apiPublicKey)
-    res.status(200).json({ encryptedText })
+    res.status(200).json({ encryptedText, len: Buffer.from(encryptedText).toString('base64').length })
   } catch (error) {
     console.error(error)
     res.status(500).json({ error })

@@ -10,12 +10,9 @@ function handleAccountsChanged(e: string) {
 
 const Home: NextPage = () => {
 
-  const apiCred = {
-    "version": "x25519-xsalsa20-poly1305",
-    "nonce": "f+FQPeKzNJrWEehvJKAQ5uY+hpMBaYQ4",
-    "ephemPublicKey": "fmQWzhihX0xHvJvhd5wGFClqypNX6VTvCaHcvEYshXA=",
-  }
-  const apiEncryptionKey = "N8Dux/ah3ee2dLjKUAHDQOJE5cXAC/WflFUF0UfUmGQ="
+  const apiCred = "eyJ2ZXJzaW9uIjoieDI1NTE5LXhzYWxzYTIwLXBvbHkxMzA1Iiwibm9uY2UiOiJmK0ZRUGVLek5KcldFZWh2SktBUTV1WStocE1CYVlRNCIsImVwaGVtUHVibGljS2V5IjoiZm1RV3poaWhYMHhIdkp2aGQ1d0dGQ2xxeXBOWDZWVHZDYUhjdkVZc2hYQT0ifQ=="
+  const apiEncryptionKey = 'TjhEdXgvYWgzZWUyZExqS1VBSERRT0pFNWNYQUMvV2ZsRlVGMFVmVW1HUT0='
+
   const [license, setLicense] = useState('')
   const [buyerAccount, setBuyerAccount] = useState('')
   const [sellerLockedLicense, setSellerLockedLicense] = useState('-')
@@ -37,41 +34,44 @@ const Home: NextPage = () => {
             params: [account[0]], // you must have access to the specified account
           })
           .then((result: string) => {
-            setBuyerEncryptionKey(result)
+            setBuyerEncryptionKey(Buffer.from(result).toString('base64'))
           })
       })
   }
 
   function lockLicense() {
-    setSellerLockedLicense(encryptStr(license, apiEncryptionKey))
+    const apiEncB64 = Buffer.from(apiEncryptionKey, 'base64').toString('utf-8')
+    const encStr = encryptStr(license, apiEncB64)
+    const encB64 = Buffer.from(encStr).toString('base64')
+    setSellerLockedLicense(encB64)
   }
 
   function getLicense() {
-    const data = JSON.parse(buyerApprovedLicense)
+
+    const data = Buffer.from(buyerApprovedLicense, 'base64').toString('utf-8')
+    console.log('data', data)
     window.ethereum
       .request({
         method: 'eth_decrypt',
-        params: [buyerApprovedLicense, buyerAccount],
+        params: [data, buyerAccount],
       })
       .then((decryptedMessage: string) =>
         setBuyerLicense(decryptedMessage)
       )
   }
   function approveLicense() {
-    fetch('/api/byte32', {
-      method: 'POST',
-      body: JSON.stringify({
-        sourceEncryptedText: contractLockedLicense,
-        targetPublicKey: contractBuyerKey,
-      }),
-      headers: {
-        'Accept': 'application/json, text/plain, */*',
-        'Content-Type': 'application/json'
-      },
-    }).then(res => res.json()).then(res => {
-      console.log(res)
-      setApprovedLicense(res.targetCipherText)
-    })
+    const params = {
+      sourceEncryptedText: contractLockedLicense,
+      targetPublicKey: buyerEncryptionKey,
+    }
+
+    const queryParams = new URLSearchParams(params).toString()
+    console.log('queryParams', queryParams)
+    fetch(`/api/byte32?${queryParams}`)
+      .then(res => res.json())
+      .then(res => {
+        setApprovedLicense(res.targetCipherText)
+      })
   }
 
   return (
@@ -99,7 +99,7 @@ const Home: NextPage = () => {
           <div className="flex flex-row gap-2 mt-4">
             <div className="text-gray-600 w-44">Locked License</div>
             <input type="text" placeholder="Locked License" className="p-2 rounded flex-grow" onChange={(e) => { setContractLockedLicense(e.target.value) }} />
-          </div>setContractBuyerKey
+          </div>
           <div className="flex flex-row gap-2 mt-4">
             <div className="text-gray-600 w-44">Buyer Encryption Key</div>
             <input type="text" placeholder="Buyer Encryption Key" className="p-2 rounded flex-grow" onChange={(e) => { setContractBuyerKey(e.target.value) }} />
@@ -114,10 +114,10 @@ const Home: NextPage = () => {
           <div className="flex flex-row gap-2 mt-4">
             <div className="text-gray-600 w-44">Full License</div>
             <div className="text-gray-500 w-96 break-words">{
-              JSON.stringify({
-                ...apiCred,
+              Buffer.from(JSON.stringify({
+                ...JSON.parse(Buffer.from(apiCred, 'base64').toString()),
                 ciphertext: approvedLicense,
-              })
+              })).toString('base64')
             }</div>
           </div>
         </div>
@@ -128,7 +128,7 @@ const Home: NextPage = () => {
           </div>
           <div className="flex flex-row gap-2 mt-4">
             <div className="text-gray-600 w-44">Buyer Encryption Key</div>
-            <div className="text-gray-500 flex-grow">{buyerEncryptionKey}</div>
+            <div className="text-gray-500 w-96 break-words">{buyerEncryptionKey}</div>
           </div>
           <div className="flex flex-row gap-2 mt-4">
             <div className="text-gray-600 w-44">Approved License</div>

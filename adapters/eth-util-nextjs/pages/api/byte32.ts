@@ -7,12 +7,18 @@ export default function handler(
 ): void {
   try {
 
-    const sourceEncryptedText = req.body.sourceEncryptedText
+    console.log(req.url)
+    const sourceEncryptedTextRaw = req.query.sourceEncryptedText as string
+    const targetPublicKeyRaw = req.query.targetPublicKey as string
+
+    const sourceEncryptedText = Buffer.from(sourceEncryptedTextRaw.replace(/ /g, '+'), 'base64').toString('utf8')
+    const targetPublicKey = Buffer.from(targetPublicKeyRaw.replace(/ /g, '+'), 'base64').toString()
+
 
     const apiPrivateKey = process.env.API_PRIVATE_KEY as string
     const plainText = decryptStr(sourceEncryptedText, apiPrivateKey)
 
-    const targetPublicKey = req.body.targetPublicKey
+
     const targetCipherText = encryptConst(plainText, targetPublicKey)
     res.status(200).json({
       part1: targetCipherText.substr(0, 32),
