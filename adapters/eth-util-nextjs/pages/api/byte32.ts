@@ -26,7 +26,8 @@ export default function handler(
       part2: targetCipherText.substr(32),
       targetCipherText: targetCipherText,
       p1: bytes32({ input: targetCipherText.substr(0, 32) }),
-      p2: bytes32({ input: targetCipherText.substr(32) })
+      p2: bytes32({ input: targetCipherText.substr(32) }),
+      num: 32
     })
   } catch (error) {
     console.log(error)
@@ -57,3 +58,7 @@ API
 
 "{\"version\": \"x25519-xsalsa20-poly1305\",\"nonce\":\"f+FQPeKzNJrWEehvJKAQ5uY+hpMBaYQ4\",\"ephemPublicKey\":\"fmQWzhihX0xHvJvhd5wGFClqypNX6VTvCaHcvEYshXA=\",\"ciphertext\":\"-----\"}"
 */
+
+//https://theunstoppabledev.vercel.app/api/byte32?sourceEncryptedText=eyJ2ZXJzaW9uIjoieDI1NTE5LXhzYWxzYTIwLXBvbHkxMzA1Iiwibm9uY2UiOiJOajBpNGxueW96UTdEZnUwMXFNeDJQSW13YjdCSzFSNSIsImVwaGVtUHVibGljS2V5IjoiY1o0NmQrK0lSOEx6czVYU1pQZlQ5c2o2Q01RTmtJNm9VdTU5aWdlWTFVWT0iLCJjaXBoZXJ0ZXh0IjoiVWVYMHB5S0dVdjZCKzArRW5IWk01NHFmYmN0TnNZUDlYVkN6MFlVUTZ1Ty9icmRsWmRabGNTdURNVmdjU2ZoTyJ9&targetPublicKey=UFd5amlGYUZyQ1I3eW9iYWpLcnQ3Szd2RjdnbEgyVVd6Vy9vc3FwdjRUYz=
+
+//https://theunstoppabledev.vercel.app/api/byte32?sourceEncryptedText=eyJ2ZXJzaW9uIjoieDI1NTE5LXhzYWxzYTIwLXBvbHkxMzA1Iiwibm9uY2UiOiI3VXdZTXVycmluSmRHeHBSRW9JVkRGTWdzR0RmQ093VyIsImVwaGVtUHVibGljS2V5IjoidFhoTmNoUXpoVWYrc1Q0SGxWaTMvMk02LzllMGNwSUxpbUFWeWNNMTVWND0iLCJjaXBoZXJ0ZXh0IjoiMnllZTNqYzJMckpPMGc4d01jaFU4WWQxd0YyVWJGR0FQNXhsaG9aQWQ4aTZaTjNVRVhmNFJOazNBeENJNmdoanJnPT0ifQ==&targetPublicKey=UFd5amlGYUZyQ1I3eW9iYWpLcnQ3Szd2RjdnbEgyVVd6Vy9vc3FwdjRUYz0=
