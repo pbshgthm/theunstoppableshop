@@ -751,6 +751,11 @@ builtin-status-codes@^3.0.0:
   resolved "https://registry.yarnpkg.com/builtin-status-codes/-/builtin-status-codes-3.0.0.tgz#85982878e21b98e1c66425e03d0174788f569ee8"
   integrity sha1-hZgoeOIbmOHGZCXgPQF0eI9Wnug=
 
+bytes32@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/bytes32/-/bytes32-0.0.3.tgz#85d90c220a74cce02fa6f7062dc1a2b5de3b3f78"
+  integrity sha512-uQM5zGcelcBEk0R7vkIRVN7GnrDd2S5EeWrxv7dSFLPVoI5FwYiSYOOLaFwnsav0oSr3hZQ6mFq6QNi8Vt6n8w==
+
 bytes@3.1.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/bytes/-/bytes-3.1.0.tgz#f6cf7933a360e0588fa9fde85651cdc7f805d1f6"

@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { decryptStr, encryptConst } from '../../lib/encDec'
+const bytes32 = require('bytes32')
 
 export default function handler(
   req: NextApiRequest,
@@ -23,7 +24,9 @@ export default function handler(
     res.status(200).json({
       part1: targetCipherText.substr(0, 32),
       part2: targetCipherText.substr(32),
-      targetCipherText: targetCipherText
+      targetCipherText: targetCipherText,
+      p1: bytes32({ input: targetCipherText.substr(0, 32) }),
+      p2: bytes32({ input: targetCipherText.substr(32) })
     })
   } catch (error) {
     console.log(error)
