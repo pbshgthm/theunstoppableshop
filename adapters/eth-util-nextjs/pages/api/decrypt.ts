@@ -11,6 +11,7 @@ export default function handler(
     const plainText = decryptStr(encryptedText, privateKey)
     res.status(200).json({ plainText })
   } catch (error) {
+    console.error(error)
     res.status(500).json({ error })
   }
 }

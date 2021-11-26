@@ -10,10 +10,8 @@ export default function handler(
 
   try {
     const privateKeyBytes = CryptoJS.lib.WordArray.random(32)
-    const privateKey = privateKeyBytes.toString(CryptoJS.enc.Hex)
-    console.log(privateKey)
+    const privateKey = privateKeyBytes.toString()
     const publicKeyStr = sigUtil.getEncryptionPublicKey(privateKey)
-    console.log(publicKeyStr, 'asasasa')
     const publicKey = Buffer.from(publicKeyStr).toString()
     res.status(200).json({ privateKey, publicKey })
   } catch (error) {
