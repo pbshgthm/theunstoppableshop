@@ -58,7 +58,7 @@ const Home: NextPage = () => {
       )
   }
   function approveLicense() {
-    fetch('/api/lock', {
+    fetch('/api/byte32', {
       method: 'POST',
       body: JSON.stringify({
         sourceEncryptedText: contractLockedLicense,
@@ -69,6 +69,7 @@ const Home: NextPage = () => {
         'Content-Type': 'application/json'
       },
     }).then(res => res.json()).then(res => {
+      console.log(res)
       setApprovedLicense(res.targetCipherText)
     })
   }
@@ -81,10 +82,6 @@ const Home: NextPage = () => {
           <div className="flex flex-row gap-2 mt-4">
             <div className="text-gray-600 w-44">Api Encryption Key</div>
             <div className="text-gray-500 w-96 break-words">{apiEncryptionKey}</div>
-          </div>
-          <div className="flex flex-row gap-2 mt-4">
-            <div className="text-gray-600 w-44">Api Encryption Info</div>
-            <div className="text-gray-500 w-96 break-words">{JSON.stringify(apiCred)}</div>
           </div>
           <div className="flex flex-row gap-2 mt-4">
             <div className="text-gray-600 w-44">License</div>
