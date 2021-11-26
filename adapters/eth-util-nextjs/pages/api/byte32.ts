@@ -21,14 +21,16 @@ export default function handler(
 
 
     const targetCipherText = encryptConst(plainText, targetPublicKey)
-    res.status(200).json({
+    const result = {
       part1: targetCipherText.substr(0, 32),
       part2: targetCipherText.substr(32),
       targetCipherText: targetCipherText,
       p1: bytes32({ input: targetCipherText.substr(0, 32) }),
       p2: bytes32({ input: targetCipherText.substr(32) }),
       num: 32
-    })
+    }
+    console.log(result)
+    res.status(200).json(result)
   } catch (error) {
     console.log(error)
     res.status(500).json({ error })
