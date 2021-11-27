@@ -69,7 +69,7 @@ contract Shop {
         string memory _lockedLicense,
         uint256 _price,
         uint256 _stock
-    ) public onlyGuild returns (uint256) {
+    ) public onlyGuild {
         products.push(
             Product({
                 productId: productsCount,
@@ -125,7 +125,10 @@ contract Shop {
         openSaleIds.pop();
         delete openSaleIdToIndex[_saleId];
 
-        sales[_saleId].buyer.call{value: sales[_saleId].amount}("");
+        (bool sent, ) = sales[_saleId].buyer.call{value: sales[_saleId].amount}(
+            ""
+        );
+        require(sent);
     }
 
     function closeSale(uint256 _saleId, bytes32[2] memory _unlockedLicense)
@@ -171,6 +174,7 @@ contract Shop {
     function withdraw(uint256 _amount) public payable onlyGuild {
         require(shopBalance > _amount);
         shopBalance -= _amount;
-        owner.call{value: _amount}("");
+        (bool sent, ) = owner.call{value: _amount}("");
+        require(sent);
     }
 }

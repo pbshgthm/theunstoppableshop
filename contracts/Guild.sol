@@ -129,7 +129,8 @@ contract Guild {
         onlyBuyer(_shopId, _saleId)
     {
         Shop(shops[_shopId]).getRefund(_saleId);
-        msg.sender.call{value: ratingReward}(""); // refund with a multiplier?
+        (bool sent, ) = msg.sender.call{value: ratingReward}("");
+        require(sent);
     }
 
     function addRating(
