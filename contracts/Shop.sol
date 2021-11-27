@@ -91,7 +91,7 @@ contract Shop {
         address _buyer,
         uint256 _productId,
         string memory _publicKey
-    ) public payable onlyGuild returns (uint256, string memory) {
+    ) public payable onlyGuild {
         require(_productId <= productsCount);
         require(products[_productId].salesCount < products[_productId].stock);
         require(products[_productId].isAvailable);
@@ -155,8 +155,6 @@ contract Shop {
         products[sales[_saleId].productId].rating[0]++;
         products[sales[_saleId].productId].rating[1] += _rating;
     }
-
-    // only one rating allowed now, but can be easily modified
 
     function shelfProduct(uint256 _productId) public onlyGuild {
         products[_productId].isAvailable = false;

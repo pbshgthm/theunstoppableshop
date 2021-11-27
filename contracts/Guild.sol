@@ -29,8 +29,8 @@ contract Guild {
     mapping(uint256 => uint256) public requestIdToRequestIndex;
 
     mapping(address => uint256) buyerCredits;
-    // list of buyers with credits
-    // close credits periodically
+    // list of buyers with credits..
+    // ..close credits periodically
 
     modifier onlyOwner() {
         require(msg.sender == owner);
@@ -93,7 +93,6 @@ contract Guild {
         uint256 _redeemCredits
     ) public payable {
         require(msg.sender != Shop(shops[_shopId]).owner());
-        // add condition to check if the buyer already purchased this product
 
         require(buyerCredits[msg.sender] >= _redeemCredits);
         buyerCredits[msg.sender] -= _redeemCredits;
