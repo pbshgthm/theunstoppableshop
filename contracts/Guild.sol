@@ -1,128 +1,214 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity >=0.7.0 <0.9.0;
+pragma solidity ^0.8.7;
 
-import "./Shop.sol";
+import "./shop.sol";
+import "./unlockOracleClient.sol";
+
+//import "@chainlink/contracts/src/v0.7/KeeperCompatible.sol";
+// is working ever without this import??
 
 contract Guild {
-    address[] public shopAddressList;
+    struct UnlockRequest {
+        uint256 requestId;
+        uint256 shopId;
+        uint256 saleId;
+    }
 
-    mapping(address => address[]) public ownerToShopList;
-    mapping(string => address) public shopNameToAddress;
-    mapping(address => bool) public isBlocked;
+    address creator;
+    address oracleClient;
+    address[] public shops;
+    uint256 ratingReward = 10;
+    uint256 serviceTax = 50;
+    uint256 MAX_SHOPS = 32;
 
-    modifier onlyShopOwner(string memory _shopName) {
-        require(msg.sender == Shop(shopNameToAddress[_shopName]).shopOwner());
+    mapping(uint256 => UnlockRequest) unlockRequests;
+    uint256[] pendingRequests;
+    mapping(uint256 => uint256) public requestIdToRequestIndex;
+
+    mapping(address => uint256) buyerCredits;
+
+    modifier onlyCreator() {
+        require(msg.sender == creator);
         _;
     }
 
-    modifier onlyManager(string memory _shopName) {
-        Shop shop = Shop(shopNameToAddress[_shopName]);
-        require(
-            msg.sender == shop.shopOwner() || msg.sender == shop.houseKeeper()
-        );
+    modifier onlyShopOwner(uint256 _shopId) {
+        require(msg.sender == Shop(shops[_shopId]).owner());
         _;
     }
 
-    modifier onlyBuyer(string memory _shopName, uint256 _saleId) {
-        Shop shop = Shop(shopNameToAddress[_shopName]);
-        uint256 saleIndex = shop.saleIdToIndex(_saleId);
-        (, address buyer, , , , , , , , , ) = shop.sales(saleIndex);
-        require(msg.sender == buyer, "Not buyer");
+    modifier onlyBuyer(uint256 _shopId, uint256 _saleId) {
+        (, address buyer, , , , , , ) = Shop(shops[_shopId]).sales(_saleId);
+        require(msg.sender == buyer);
         _;
     }
 
-    function getShop(string memory _shopName) internal view {
-        // function to get the shop
+    constructor(address _oracleClient) {
+        creator = msg.sender;
+        oracleClient = _oracleClient;
     }
 
-    //function to check if shopName is available
-    function isShopNameAvailable(string memory _shopName)
-        external
-        view
-        returns (bool)
-    {
-        return shopNameToAddress[_shopName] == address(0);
-    }
-
-    // function to add a new shop to the guild
-    function createShop(
-        address _housekeeper,
-        address _resolver,
-        string memory _shopName
-    ) external {
-        require(
-            shopNameToAddress[_shopName] == address(0),
-            "Shop already exists"
-        );
-        Shop shop = new Shop(_housekeeper, _resolver, msg.sender, _shopName); // add shop name here
-        shopAddressList.push(address(shop));
-        shopNameToAddress[_shopName] = address(shop);
-        ownerToShopList[msg.sender].push(address(shop));
+    function createShop(string memory _detailsCId) public {
+        require(shops.length < MAX_SHOPS);
+        Shop shop = new Shop(msg.sender, _detailsCId);
+        shops.push(address(shop));
     }
 
     function addProduct(
-        string memory _shopName,
-        // string memory _productName, // required? or not?
-        string memory _contentAddress,
-        string memory _descAddress,
+        uint256 _shopId,
+        string memory _contentCId,
+        string memory _detailsCId,
         string memory _licenseHash,
-        uint256 _price
-    ) external onlyShopOwner(_shopName) {
-        Shop shop = Shop(shopNameToAddress[_shopName]);
-        shop.addProduct(_contentAddress, _descAddress, _licenseHash, _price);
+        string memory _lockedLicense,
+        uint256 _price,
+        uint256 _stock
+    ) public onlyShopOwner(_shopId) {
+        Shop(shops[_shopId]).addProduct(
+            _contentCId,
+            _detailsCId,
+            _licenseHash,
+            _lockedLicense,
+            _price,
+            _stock
+        );
     }
 
     function requestSale(
-        string memory _shopName,
+        uint256 _shopId,
         uint256 _productId,
-        string memory _pubKey
+        string memory _publicKey,
+        uint256 _redeemCredits
     ) public payable {
-        Shop shop = Shop(shopNameToAddress[_shopName]);
-        require(msg.sender != shop.shopOwner(), "Owner can't request sale!");
-        // add condition to check if the buyer already purchased this?
-        shop.requestSale{value: msg.value}(_productId, _pubKey, msg.sender);
+        require(msg.sender != Shop(shops[_shopId]).owner());
+        // add condition to check if the buyer already purchased this product
+        require(buyerCredits[msg.sender] >= _redeemCredits);
+        buyerCredits[msg.sender] -= _redeemCredits;
+
+        (uint256 saleId, string memory lockedLicense) = Shop(shops[_shopId])
+            .requestSale{
+            value: msg.value + _redeemCredits - ratingReward - serviceTax
+        }(msg.sender, _productId, _publicKey);
+
+        uint256 unlockRequestId = UnlockOracleClient(oracleClient).addRequest(
+            lockedLicense,
+            _publicKey
+        );
+        unlockRequests[unlockRequestId] = UnlockRequest({
+            requestId: unlockRequestId,
+            shopId: _shopId,
+            saleId: saleId
+        });
+
+        pendingRequests.push(unlockRequestId);
+        requestIdToRequestIndex[unlockRequestId] = pendingRequests.length - 1;
     }
 
-    function respondToSale(
-        string memory _shopName,
-        uint256 _saleId,
-        string memory _encryptedLiscense
-    ) public onlyManager(_shopName) {
-        Shop shop = Shop(shopNameToAddress[_shopName]);
-        shop.respondToSale(_saleId, _encryptedLiscense, msg.sender);
-    }
-
-    function confirmSale(string memory _shopName, uint256 _saleId)
-        public
-        onlyBuyer(_shopName, _saleId)
-    {
-        Shop shop = Shop(shopNameToAddress[_shopName]);
-        shop.confirmSale(_saleId);
-    }
-
-    function claimDispute(
-        string memory _shopName,
-        uint256 _saleId,
-        string memory _decryptedLiscense
-    ) public onlyBuyer(_shopName, _saleId) {
-        Shop shop = Shop(shopNameToAddress[_shopName]);
-        shop.claimDispute(_saleId, _decryptedLiscense);
-    }
-
-    function settleDispute(uint256 _saleId, bool _isValidClaim) public {}
-
-    function noResponseRefund(string memory _shopName, uint256 _saleId)
+    function getRefund(uint256 _shopId, uint256 _saleId)
         public
         payable
+        onlyBuyer(_shopId, _saleId)
     {
-        Shop shop = Shop(shopNameToAddress[_shopName]);
-        shop.noResponseRefund(_saleId);
+        Shop(shops[_shopId]).getRefund(_saleId);
+        msg.sender.call{value: ratingReward}(""); // refund with a multiplier?
     }
 
-    function autoConfirmation(string memory _shopName, uint256 _saleId) public {
-        // removed payable
-        Shop shop = Shop(shopNameToAddress[_shopName]);
-        shop.autoConfirmation(_saleId);
+    function addRating(
+        uint256 _shopId,
+        uint256 _saleId,
+        uint256 _rating
+    ) public onlyBuyer(_shopId, _saleId) {
+        Shop(shops[_shopId]).addRating(_saleId, _rating);
+        buyerCredits[msg.sender] += ratingReward;
     }
+
+    function shelfProduct(uint256 _shopId, uint256 _productId)
+        public
+        onlyShopOwner(_shopId)
+    {
+        Shop(shops[_shopId]).shelfProduct(_productId);
+    }
+
+    function changePrice(
+        uint256 _shopId,
+        uint256 _productId,
+        uint256 _price
+    ) public onlyShopOwner(_shopId) {
+        Shop(shops[_shopId]).changePrice(_productId, _price);
+    }
+
+    function changeStock(
+        uint256 _shopId,
+        uint256 _productId,
+        uint256 _stock
+    ) public onlyShopOwner(_shopId) {
+        Shop(shops[_shopId]).changeStock(_productId, _stock);
+    }
+
+    function withdraw(uint256 _shopId, uint256 _amount)
+        public
+        payable
+        onlyShopOwner(_shopId)
+    {
+        Shop(shops[_shopId]).withdraw(_amount);
+    }
+
+    function completeUnlock(uint256 _requestId) internal {
+        bytes32[2] memory unlockedLicense = UnlockOracleClient(oracleClient)
+            .getResult(_requestId);
+        Shop(shops[unlockRequests[_requestId].shopId]).closeSale(
+            unlockRequests[_requestId].saleId,
+            unlockedLicense
+        );
+
+        pendingRequests[requestIdToRequestIndex[_requestId]] = pendingRequests[
+            pendingRequests.length - 1
+        ];
+        requestIdToRequestIndex[
+            pendingRequests[pendingRequests.length - 1]
+        ] = requestIdToRequestIndex[_requestId];
+
+        pendingRequests.pop();
+        delete requestIdToRequestIndex[_requestId];
+        delete unlockRequests[_requestId];
+    }
+
+    function checkUpkeep(
+        bytes calldata /* checkData */
+    ) external returns (bool, bytes memory) {
+        uint256 completedRequestsCount = 0;
+        uint256[] memory completedRequestIds;
+
+        for (uint256 i = 0; i < pendingRequests.length; i++) {
+            UnlockOracleClient(oracleClient).getResult(pendingRequests[i]);
+            completedRequestIds[completedRequestsCount] = pendingRequests[i];
+            completedRequestsCount++;
+        }
+        return (
+            (completedRequestIds.length > 0), //upkeepNeeded
+            abi.encodePacked(completedRequestIds) //performData
+        );
+    }
+
+    function performUpkeep(bytes calldata performData) external {
+        uint256[] memory pendingRequestIds = performData;
+        // ABOVE CONVRSION WONT HAPPEN, NEED TO FIGURE OUT HOW TO DO IT
+
+        for (uint256 i = 0; i < pendingRequestIds.length; i++) {
+            completeUnlock(pendingRequestIds[i]);
+        }
+    }
+
+    // alternative to performUpkeep ---------
+    function altCompleteUnlock(
+        uint256 _requestId,
+        bytes32[2] memory _unlockedLicense
+    ) internal {
+        Shop(shops[unlockRequests[_requestId].shopId]).closeSale(
+            unlockRequests[_requestId].saleId,
+            _unlockedLicense
+        );
+        delete unlockRequests[_requestId];
+    }
+    //-----------------------------------------------
 }
