@@ -85,7 +85,6 @@ contract Shop {
             })
         );
         productsCount++;
-        return productsCount - 1;
     }
 
     function requestSale(
@@ -112,8 +111,6 @@ contract Shop {
         openSaleIds.push(salesCount);
         openSaleIdToIndex[salesCount] = openSaleIds.length - 1;
         salesCount++;
-        return (salesCount - 1, products[_productId].lockedLicense);
-        //saleId, lockedLicense
     }
 
     function getRefund(uint256 _saleId) public payable onlyGuild {

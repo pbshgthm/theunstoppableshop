@@ -2,11 +2,14 @@
 
 pragma solidity ^0.8.7;
 
-import "./shop.sol";
-import "./unlockOracleClient.sol";
+import "./Shop.sol";
 
-//import "@chainlink/contracts/src/v0.7/KeeperCompatible.sol";
-// is working ever without this import??
+interface IUnlockOracleClient {
+    function addRequest(string memory _lockedLicense, string memory _publicKey)
+        external;
+
+    function requestsCount() external view returns (uint256);
+}
 
 contract Guild {
     struct UnlockRequest {
@@ -15,21 +18,22 @@ contract Guild {
         uint256 saleId;
     }
 
-    address creator;
+    address owner;
     address oracleClient;
     address[] public shops;
     uint256 ratingReward = 10;
     uint256 serviceTax = 50;
-    uint256 MAX_SHOPS = 32;
 
     mapping(uint256 => UnlockRequest) unlockRequests;
     uint256[] pendingRequests;
     mapping(uint256 => uint256) public requestIdToRequestIndex;
 
     mapping(address => uint256) buyerCredits;
+    // list of buyers with credits
+    // close credits periodically
 
-    modifier onlyCreator() {
-        require(msg.sender == creator);
+    modifier onlyOwner() {
+        require(msg.sender == owner);
         _;
     }
 
@@ -44,13 +48,21 @@ contract Guild {
         _;
     }
 
+    modifier onlyOracleClient() {
+        require(msg.sender == oracleClient);
+        _;
+    }
+
     constructor(address _oracleClient) {
-        creator = msg.sender;
+        owner = msg.sender;
         oracleClient = _oracleClient;
     }
 
+    function changeOracle(address _oracle) public onlyOwner {
+        oracleClient = _oracle;
+    }
+
     function createShop(string memory _detailsCId) public {
-        require(shops.length < MAX_SHOPS);
         Shop shop = new Shop(msg.sender, _detailsCId);
         shops.push(address(shop));
     }
@@ -82,18 +94,26 @@ contract Guild {
     ) public payable {
         require(msg.sender != Shop(shops[_shopId]).owner());
         // add condition to check if the buyer already purchased this product
+
         require(buyerCredits[msg.sender] >= _redeemCredits);
         buyerCredits[msg.sender] -= _redeemCredits;
 
-        (uint256 saleId, string memory lockedLicense) = Shop(shops[_shopId])
-            .requestSale{
+        Shop(shops[_shopId]).requestSale{
             value: msg.value + _redeemCredits - ratingReward - serviceTax
         }(msg.sender, _productId, _publicKey);
 
-        uint256 unlockRequestId = UnlockOracleClient(oracleClient).addRequest(
-            lockedLicense,
-            _publicKey
+        (uint256 saleId, , , , , , , ) = Shop(shops[_shopId]).sales(
+            Shop(shops[_shopId]).salesCount() - 1
         );
+
+        (, , , , string memory lockedLicense, , , , ) = Shop(shops[_shopId])
+            .products(_productId);
+
+        IUnlockOracleClient(oracleClient).addRequest(lockedLicense, _publicKey);
+
+        uint256 unlockRequestId = IUnlockOracleClient(oracleClient)
+            .requestsCount() - 1;
+
         unlockRequests[unlockRequestId] = UnlockRequest({
             requestId: unlockRequestId,
             shopId: _shopId,
@@ -145,7 +165,7 @@ contract Guild {
         Shop(shops[_shopId]).changeStock(_productId, _stock);
     }
 
-    function withdraw(uint256 _shopId, uint256 _amount)
+    function withdrawFromShop(uint256 _shopId, uint256 _amount)
         public
         payable
         onlyShopOwner(_shopId)
@@ -153,12 +173,13 @@ contract Guild {
         Shop(shops[_shopId]).withdraw(_amount);
     }
 
-    function completeUnlock(uint256 _requestId) internal {
-        bytes32[2] memory unlockedLicense = UnlockOracleClient(oracleClient)
-            .getResult(_requestId);
+    function completeUnlock(
+        uint256 _requestId,
+        bytes32[2] memory _unlockedLicense
+    ) external onlyOracleClient {
         Shop(shops[unlockRequests[_requestId].shopId]).closeSale(
             unlockRequests[_requestId].saleId,
-            unlockedLicense
+            _unlockedLicense
         );
 
         pendingRequests[requestIdToRequestIndex[_requestId]] = pendingRequests[
@@ -172,43 +193,4 @@ contract Guild {
         delete requestIdToRequestIndex[_requestId];
         delete unlockRequests[_requestId];
     }
-
-    function checkUpkeep(
-        bytes calldata /* checkData */
-    ) external returns (bool, bytes memory) {
-        uint256 completedRequestsCount = 0;
-        uint256[] memory completedRequestIds;
-
-        for (uint256 i = 0; i < pendingRequests.length; i++) {
-            UnlockOracleClient(oracleClient).getResult(pendingRequests[i]);
-            completedRequestIds[completedRequestsCount] = pendingRequests[i];
-            completedRequestsCount++;
-        }
-        return (
-            (completedRequestIds.length > 0), //upkeepNeeded
-            abi.encodePacked(completedRequestIds) //performData
-        );
-    }
-
-    function performUpkeep(bytes calldata performData) external {
-        uint256[] memory pendingRequestIds = performData;
-        // ABOVE CONVRSION WONT HAPPEN, NEED TO FIGURE OUT HOW TO DO IT
-
-        for (uint256 i = 0; i < pendingRequestIds.length; i++) {
-            completeUnlock(pendingRequestIds[i]);
-        }
-    }
-
-    // alternative to performUpkeep ---------
-    function altCompleteUnlock(
-        uint256 _requestId,
-        bytes32[2] memory _unlockedLicense
-    ) internal {
-        Shop(shops[unlockRequests[_requestId].shopId]).closeSale(
-            unlockRequests[_requestId].saleId,
-            _unlockedLicense
-        );
-        delete unlockRequests[_requestId];
-    }
-    //-----------------------------------------------
 }
