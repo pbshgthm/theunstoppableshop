@@ -156,7 +156,7 @@ contract Guild {
     }
 
     function shelfProduct(uint256 _shopId, uint256 _productId)
-        public
+        external
         onlyShopOwner(_shopId)
     {
         Shop(shops[_shopId]).shelfProduct(_productId);
@@ -166,7 +166,7 @@ contract Guild {
         uint256 _shopId,
         uint256 _productId,
         uint256 _price
-    ) public onlyShopOwner(_shopId) {
+    ) external onlyShopOwner(_shopId) {
         Shop(shops[_shopId]).changePrice(_productId, _price);
     }
 
@@ -174,12 +174,12 @@ contract Guild {
         uint256 _shopId,
         uint256 _productId,
         uint256 _stock
-    ) public onlyShopOwner(_shopId) {
+    ) external onlyShopOwner(_shopId) {
         Shop(shops[_shopId]).changeStock(_productId, _stock);
     }
 
     function withdrawFromShop(uint256 _shopId, uint256 _amount)
-        public
+        external
         payable
         onlyShopOwner(_shopId)
     {

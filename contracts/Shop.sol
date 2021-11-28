@@ -134,7 +134,7 @@ contract Shop {
         ];
         openSaleIds.pop();
         delete openSaleIdToIndex[_saleId];
-
+        // Have to decrement salesCount here, because the sale did not go through.
         (bool sent, ) = sales[_saleId].buyer.call{value: sales[_saleId].amount}(
             ""
         );
@@ -169,22 +169,60 @@ contract Shop {
         products[sales[_saleId].productId].rating[1] += _rating;
     }
 
-    function shelfProduct(uint256 _productId) public onlyGuild {
+    function shelfProduct(uint256 _productId) external onlyGuild {
         products[_productId].isAvailable = false;
     }
 
-    function changePrice(uint256 _productId, uint256 _price) public onlyGuild {
+    function changePrice(uint256 _productId, uint256 _price)
+        external
+        onlyGuild
+    {
         products[_productId].price = _price;
     }
 
-    function changeStock(uint256 _productId, uint256 _stock) public onlyGuild {
+    function changeStock(uint256 _productId, uint256 _stock)
+        external
+        onlyGuild
+    {
         products[_productId].stock = _stock;
     }
 
-    function withdraw(uint256 _amount) public payable onlyGuild {
+    function withdraw(uint256 _amount) external payable onlyGuild {
         require(shopBalance > _amount);
         shopBalance -= _amount;
         (bool sent, ) = owner.call{value: _amount}("");
         require(sent, "Error on withdraw");
+    }
+
+    // helper functions
+    function getProductInfo(uint256 _productId)
+        external
+        view
+        returns (
+            string memory,
+            string memory,
+            string memory,
+            string memory,
+            uint256,
+            uint256,
+            uint256,
+            uint256,
+            uint256,
+            bool
+        )
+    {
+        require(_productId <= productsCount, "Product does not exist");
+        return (
+            products[_productId].contentCId,
+            products[_productId].detailsCId,
+            products[_productId].licenseHash,
+            products[_productId].lockedLicense,
+            products[_productId].price,
+            products[_productId].stock,
+            products[_productId].rating[0],
+            products[_productId].rating[1],
+            products[_productId].salesCount,
+            products[_productId].isAvailable
+        );
     }
 }
