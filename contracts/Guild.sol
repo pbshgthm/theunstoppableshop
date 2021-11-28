@@ -37,8 +37,11 @@ contract Guild {
     // list of buyers with credits..
     // ..close credits periodically
 
-    // Events
-    event ShopCreated(string indexed _shopName, string _detailsCId);
+    // Events, indexed can be decided based on UI functionality choice
+    event ShopCreated(string indexed shopName, string detailsCId);
+    event RequestedSale(uint256 shopId, uint256 productId, uint256 saleId);
+    event Refunded(uint256 shopId, uint256 saleId);
+    event PriceChanged(uint256 shopId, uint256 productId, uint256 newPrice);
 
     modifier onlyOwner() {
         require(msg.sender == owner);
@@ -134,6 +137,8 @@ contract Guild {
 
         pendingRequests.push(unlockRequestId);
         requestIdToRequestIndex[unlockRequestId] = pendingRequests.length - 1;
+
+        emit RequestedSale(_shopId, _productId, saleId);
     }
 
     function getRefund(uint256 _shopId, uint256 _saleId)
@@ -144,6 +149,7 @@ contract Guild {
         Shop(shops[_shopId]).getRefund(_saleId);
         (bool sent, ) = msg.sender.call{value: ratingReward}("");
         require(sent, "Failed to refund rating reward"); // refund with a multiplier?
+        emit Refunded(_shopId, _saleId);
     }
 
     function addRating(
@@ -168,6 +174,7 @@ contract Guild {
         uint256 _price
     ) external onlyShopOwner(_shopId) {
         Shop(shops[_shopId]).changePrice(_productId, _price);
+        emit PriceChanged(_shopId, _productId, _price);
     }
 
     function changeStock(

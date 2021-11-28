@@ -74,11 +74,11 @@ contract UnlockOracleClient is ChainlinkClient {
         owner = msg.sender;
     }
 
-    function addMember(address _guild) public onlyOwner {
+    function addMember(address _guild) external onlyOwner {
         memberGuild[_guild] = true;
     }
 
-    function removeMember(address _guild) public onlyOwner {
+    function removeMember(address _guild) external onlyOwner {
         delete memberGuild[_guild];
     }
 
@@ -142,7 +142,7 @@ contract UnlockOracleClient is ChainlinkClient {
     }
 
     function fulfill(bytes32 _jobId, bytes32 _data)
-        public
+        external
         recordChainlinkFulfillment(_jobId)
     {
         if (jobs[jobs[_jobId].pairJobId].result != bytes32(0)) {

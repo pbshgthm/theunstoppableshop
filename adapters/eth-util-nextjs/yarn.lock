@@ -1315,6 +1315,11 @@
   "resolved" "https://registry.npmjs.org/domain-browser/-/domain-browser-4.19.0.tgz"
   "version" "4.19.0"
 
+"dotenv@^10.0.0":
+  "integrity" "sha512-rlBi9d8jpv9Sf1klPjNfFAuWDjKLwTIJJ/VxtoTwIR6hnZxcEOQCZg2oIL3MWBYw5GpUDKOEnND7LXTbIpQ03Q=="
+  "resolved" "https://registry.npmjs.org/dotenv/-/dotenv-10.0.0.tgz"
+  "version" "10.0.0"
+
 "electron-to-chromium@^1.3.723", "electron-to-chromium@^1.3.896":
   "integrity" "sha512-SxHMmlSvpT83M/MLxTXQBqfqo3bK+UOk6Uup6w1paX86l+af1xwwTMLlyK3xJwE3Kq8/QnecuFKmnmRlAUJCXw=="
   "resolved" "https://registry.npmjs.org/electron-to-chromium/-/electron-to-chromium-1.4.2.tgz"
