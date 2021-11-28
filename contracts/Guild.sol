@@ -23,14 +23,22 @@ contract Guild {
     address[] public shops;
     uint256 ratingReward = 10;
     uint256 serviceTax = 50;
+    uint256 constant MAX_UINT = 2**256 - 1;
 
     mapping(uint256 => UnlockRequest) unlockRequests;
     uint256[] pendingRequests;
     mapping(uint256 => uint256) public requestIdToRequestIndex;
 
+    // get shopId before making any function calls
+    mapping(string => uint256) public shopNameToShopId;
+    mapping(string => bool) public isShopNameTaken;
+
     mapping(address => uint256) buyerCredits;
     // list of buyers with credits..
     // ..close credits periodically
+
+    // Events
+    event ShopCreated(string indexed _shopName, string _detailsCId);
 
     modifier onlyOwner() {
         require(msg.sender == owner);
@@ -58,13 +66,18 @@ contract Guild {
         oracleClient = _oracleClient;
     }
 
-    function changeOracle(address _oracle) public onlyOwner {
+    function changeOracle(address _oracle) external onlyOwner {
         oracleClient = _oracle;
     }
 
-    function createShop(string memory _detailsCId) public {
-        Shop shop = new Shop(msg.sender, _detailsCId);
+    function createShop(string memory _shopName, string memory _detailsCId)
+        external
+    {
+        require(!isShopNameTaken[_shopName], "Shop name already taken");
+        Shop shop = new Shop(msg.sender, _shopName, _detailsCId);
         shops.push(address(shop));
+        shopNameToShopId[_shopName] = shops.length - 1;
+        emit ShopCreated(_shopName, _detailsCId);
     }
 
     function addProduct(
@@ -75,14 +88,14 @@ contract Guild {
         string memory _lockedLicense,
         uint256 _price,
         uint256 _stock
-    ) public onlyShopOwner(_shopId) {
+    ) external onlyShopOwner(_shopId) {
         Shop(shops[_shopId]).addProduct(
             _contentCId,
             _detailsCId,
             _licenseHash,
             _lockedLicense,
             _price,
-            _stock
+            _stock == 0 ? MAX_UINT : _stock // if stock is given, use it else use max uint.
         );
     }
 
@@ -91,7 +104,7 @@ contract Guild {
         uint256 _productId,
         string memory _publicKey,
         uint256 _redeemCredits
-    ) public payable {
+    ) external payable {
         require(msg.sender != Shop(shops[_shopId]).owner());
 
         require(buyerCredits[msg.sender] >= _redeemCredits);
@@ -124,7 +137,7 @@ contract Guild {
     }
 
     function getRefund(uint256 _shopId, uint256 _saleId)
-        public
+        external
         payable
         onlyBuyer(_shopId, _saleId)
     {

@@ -31,6 +31,29 @@ contract UnlockOracleClient is ChainlinkClient {
     bytes32 jobId = "c6a006e4f4844754a6524445acde84a0";
     uint256 fee = 0.01 * 10**18;
     address linkTokenContract = 0x326C977E6efc84E512bB9C30f76E30c160eD06FB;
+    string urlString1 =
+        "https://theunstoppabledev.vercel.app/api/byte32?sourceEncryptedText=";
+
+    string urlString2 = "&targetPublicKey=";
+
+    function setConstants(
+        address _oracle,
+        bytes32 _jobId,
+        uint256 _fee,
+        address _linkTokenContract
+    ) external {
+        oracle = _oracle;
+        jobId = _jobId;
+        fee = _fee;
+        linkTokenContract = _linkTokenContract;
+    }
+
+    function setUrl(string memory _urlString1, string memory _urlString2)
+        external
+    {
+        urlString1 = _urlString1;
+        urlString2 = _urlString2;
+    }
 
     function requestCount() external view returns (uint256) {
         return requestsCount;

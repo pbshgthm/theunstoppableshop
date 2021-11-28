@@ -39,6 +39,7 @@ contract Shop {
     address public owner;
     uint256 public shopBalance;
     string public detailsCId;
+    string public shopName;
 
     uint256 public productsCount = 0;
     uint256 public salesCount = 0;
@@ -56,10 +57,17 @@ contract Shop {
         _;
     }
 
-    constructor(address _owner, string memory _detailsCId) {
+    event ProductCreated(string shopName, uint256 productId);
+
+    constructor(
+        address _owner,
+        string memory _shopName,
+        string memory _detailsCId
+    ) {
         guild = msg.sender;
         owner = _owner;
         detailsCId = _detailsCId;
+        shopName = _shopName;
     }
 
     function addProduct(
@@ -85,6 +93,8 @@ contract Shop {
             })
         );
         productsCount++;
+
+        emit ProductCreated(shopName, productsCount - 1);
     }
 
     function requestSale(
