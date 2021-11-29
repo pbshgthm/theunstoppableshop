@@ -65,7 +65,7 @@ contract Shop {
     mapping(uint256 => uint256) openSaleIdToIndex;
 
     modifier onlyGuild() {
-        require(msg.sender == guild);
+        require(msg.sender == guild, "Only guild can call this function");
         _;
     }
 

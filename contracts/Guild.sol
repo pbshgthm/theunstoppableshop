@@ -146,23 +146,29 @@ contract Guild {
     event PriceChanged(uint256 shopId, uint256 productId, uint256 newPrice);
 
     modifier onlyOwner() {
-        require(msg.sender == owner);
+        require(msg.sender == owner, "Only owner can call the function!");
         _;
     }
 
     modifier onlyShopOwner(uint256 _shopId) {
-        require(msg.sender == IShop(shops[_shopId]).getOwner());
+        require(
+            msg.sender == IShop(shops[_shopId]).getOwner(),
+            "only shop owner can call the function!"
+        );
         _;
     }
 
     modifier onlyBuyer(uint256 _shopId, uint256 _saleId) {
         IShop.Sale memory sale = IShop(shops[_shopId]).getSale(_saleId);
-        require(msg.sender == sale.buyer);
+        require(msg.sender == sale.buyer, "Only buyer can call the function!");
         _;
     }
 
     modifier onlyOracleClient() {
-        require(msg.sender == oracleClient);
+        require(
+            msg.sender == oracleClient,
+            "Only oracle client can call the function!"
+        );
         _;
     }
 
@@ -186,6 +192,7 @@ contract Guild {
 
         shops.push(FactoryInterface.getLatestShopAddress());
         shopNameToShopId[_shopName] = shops.length - 1;
+        isShopNameTaken[_shopName] = true;
         emit IShopCreated(_shopName, _detailsCId);
     }
 
