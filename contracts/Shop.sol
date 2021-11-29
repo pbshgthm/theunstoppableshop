@@ -166,7 +166,7 @@ contract Shop {
         require(sales[_saleId].saleDeadline > block.timestamp);
 
         sales[_saleId].unlockedLicense0 = _unlockedLicense[0];
-        sales[_saleId].unlockedLicense1 = _unlockedLicense[0];
+        sales[_saleId].unlockedLicense1 = _unlockedLicense[1];
         sales[_saleId].status = SaleStatus.Completed;
 
         shopBalance += sales[_saleId].amount;
