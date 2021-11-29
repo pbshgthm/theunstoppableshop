@@ -30,6 +30,16 @@ contract Shop {
         SaleStatus status;
     }
 
+    struct ShopInfo {
+        address guild;
+        address owner;
+        uint256 shopBalance;
+        string detailsCId;
+        string shopName;
+        uint256 productsCount;
+        uint256 salesCount;
+    }
+
     enum SaleStatus {
         Requested,
         Refunded,
@@ -218,5 +228,26 @@ contract Shop {
 
     function getSalesCount() external view returns (uint256) {
         return salesCount;
+    }
+
+    function getShopInfo() external view returns (ShopInfo memory) {
+        return
+            ShopInfo({
+                guild: guild,
+                owner: owner,
+                shopBalance: shopBalance,
+                detailsCId: detailsCId,
+                shopName: shopName,
+                productsCount: productsCount,
+                salesCount: salesCount
+            });
+    }
+
+    function getOpenSaleIds() external view returns (uint256[] memory) {
+        return openSaleIds;
+    }
+
+    function getClosedSaleIds() external view returns (uint256[] memory) {
+        return closeSaleIds;
     }
 }

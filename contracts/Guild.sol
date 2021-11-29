@@ -39,6 +39,16 @@ interface IShop {
         uint256 rating;
         SaleStatus status;
     }
+
+    struct ShopInfo {
+        address guild;
+        address owner;
+        uint256 shopBalance;
+        string detailsCId;
+        string shopName;
+        uint256 productsCount;
+        uint256 salesCount;
+    }
     enum SaleStatus {
         Requested,
         Refunded,
@@ -56,6 +66,12 @@ interface IShop {
         external
         view
         returns (Product memory);
+
+    function getShopInfo() external view returns (ShopInfo memory);
+
+    function getOpenSaleIds() external view returns (uint256[] memory);
+
+    function getClosedSaleIds() external view returns (uint256[] memory);
 
     function addProduct(
         string memory _contentCId,
@@ -306,5 +322,46 @@ contract Guild {
         pendingRequests.pop();
         delete requestIdToRequestIndex[_requestId];
         delete unlockRequests[_requestId];
+    }
+
+    // getter functions
+    function getSale(uint256 _shopId, uint256 _saleId)
+        external
+        view
+        returns (IShop.Sale memory)
+    {
+        return IShop(shops[_shopId]).getSale(_saleId);
+    }
+
+    function getProduct(uint256 _shopId, uint256 _productId)
+        external
+        view
+        returns (IShop.Product memory)
+    {
+        return IShop(shops[_shopId]).getProduct(_productId);
+    }
+
+    function getShopInfo(uint256 _shopId)
+        external
+        view
+        returns (IShop.ShopInfo memory)
+    {
+        return IShop(shops[_shopId]).getShopInfo();
+    }
+
+    function getOpenSaleIds(uint256 _shopId)
+        external
+        view
+        returns (uint256[] memory)
+    {
+        return IShop(shops[_shopId]).getOpenSaleIds();
+    }
+
+    function getClosedSaleIds(uint256 _shopId)
+        external
+        view
+        returns (uint256[] memory)
+    {
+        return IShop(shops[_shopId]).getClosedSaleIds();
     }
 }
