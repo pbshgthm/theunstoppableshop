@@ -73,10 +73,11 @@ contract Shop {
 
     constructor(
         address _owner,
+        address _guild,
         string memory _shopName,
         string memory _detailsCId
     ) {
-        guild = msg.sender;
+        guild = _guild;
         owner = _owner;
         detailsCId = _detailsCId;
         shopName = _shopName;

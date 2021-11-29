@@ -37,7 +37,7 @@ contract ShopFactory {
         string memory _detailsCId
     ) external onlyMemberGuilds {
         latestShopAddress = address(
-            new Shop(_shopOwner, _shopName, _detailsCId)
+            new Shop(_shopOwner, msg.sender, _shopName, _detailsCId)
         );
     }
 
