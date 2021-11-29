@@ -27,6 +27,7 @@ export default function handler(
       targetCipherText: targetCipherText,
       p1: bytes32({ input: targetCipherText.substr(0, 32) }),
       p2: bytes32({ input: targetCipherText.substr(32) }),
+      px: bytes32({ input: bytes32({ input: targetCipherText.substr(32) }) }),
       num: 32
     }
     console.log(result)
