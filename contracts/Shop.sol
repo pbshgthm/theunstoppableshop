@@ -11,7 +11,8 @@ contract Shop {
         string lockedLicense;
         uint256 price;
         uint256 stock;
-        uint256[2] rating; // [0] = number of ratings, [1] = sum of ratings
+        uint256 ratingsCount;
+        uint256 ratingsSum; // [0] = number of ratings, [1] = sum of ratings
         uint256 salesCount;
         bool isAvailable;
     }
@@ -23,7 +24,8 @@ contract Shop {
         uint256 productId;
         uint256 amount;
         uint256 saleDeadline;
-        bytes32[2] unlockedLicense;
+        bytes32 unlockedLicense0;
+        bytes32 unlockedLicense1;
         uint256 rating;
         SaleStatus status;
     }
@@ -77,7 +79,7 @@ contract Shop {
         string memory _lockedLicense,
         uint256 _price,
         uint256 _stock
-    ) public onlyGuild {
+    ) external onlyGuild {
         products.push(
             Product({
                 productId: productsCount,
@@ -88,7 +90,8 @@ contract Shop {
                 price: _price,
                 stock: _stock,
                 salesCount: 0,
-                rating: [uint256(0), uint256(0)],
+                ratingsCount: 0,
+                ratingsSum: 0,
                 isAvailable: true
             })
         );
@@ -114,7 +117,8 @@ contract Shop {
             productId: _productId,
             amount: msg.value,
             saleDeadline: block.timestamp + 10000,
-            unlockedLicense: [bytes32(0), bytes32(0)],
+            unlockedLicense0: bytes32(0),
+            unlockedLicense1: bytes32(0),
             rating: 0,
             status: SaleStatus.Requested
         });
@@ -123,7 +127,7 @@ contract Shop {
         salesCount++;
     }
 
-    function getRefund(uint256 _saleId) public payable onlyGuild {
+    function getRefund(uint256 _saleId) external payable onlyGuild {
         require(sales[_saleId].status == SaleStatus.Requested);
         require(block.timestamp > sales[_saleId].saleDeadline);
 
@@ -142,13 +146,14 @@ contract Shop {
     }
 
     function closeSale(uint256 _saleId, bytes32[2] memory _unlockedLicense)
-        public
+        external
         onlyGuild
     {
         require(sales[_saleId].status == SaleStatus.Requested);
         require(sales[_saleId].saleDeadline > block.timestamp);
 
-        sales[_saleId].unlockedLicense = _unlockedLicense;
+        sales[_saleId].unlockedLicense0 = _unlockedLicense[0];
+        sales[_saleId].unlockedLicense1 = _unlockedLicense[0];
         sales[_saleId].status = SaleStatus.Completed;
 
         shopBalance += sales[_saleId].amount;
@@ -161,12 +166,12 @@ contract Shop {
         delete openSaleIdToIndex[_saleId];
     }
 
-    function addRating(uint256 _saleId, uint256 _rating) public onlyGuild {
+    function addRating(uint256 _saleId, uint256 _rating) external onlyGuild {
         require(sales[_saleId].status == SaleStatus.Completed);
         sales[_saleId].rating = _rating;
         sales[_saleId].status = SaleStatus.Rated;
-        products[sales[_saleId].productId].rating[0]++;
-        products[sales[_saleId].productId].rating[1] += _rating;
+        products[sales[_saleId].productId].ratingsCount++;
+        products[sales[_saleId].productId].ratingsSum += _rating;
     }
 
     function shelfProduct(uint256 _productId) external onlyGuild {
@@ -195,34 +200,23 @@ contract Shop {
     }
 
     // helper functions
-    function getProductInfo(uint256 _productId)
+    function getOwner() external view returns (address) {
+        return owner;
+    }
+
+    function getSale(uint256 _saleId) external view returns (Sale memory) {
+        return sales[_saleId];
+    }
+
+    function getProduct(uint256 _productId)
         external
         view
-        returns (
-            string memory,
-            string memory,
-            string memory,
-            string memory,
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            bool
-        )
+        returns (Product memory)
     {
-        require(_productId <= productsCount, "Product does not exist");
-        return (
-            products[_productId].contentCId,
-            products[_productId].detailsCId,
-            products[_productId].licenseHash,
-            products[_productId].lockedLicense,
-            products[_productId].price,
-            products[_productId].stock,
-            products[_productId].rating[0],
-            products[_productId].rating[1],
-            products[_productId].salesCount,
-            products[_productId].isAvailable
-        );
+        return products[_productId];
+    }
+
+    function getSalesCount() external view returns (uint256) {
+        return salesCount;
     }
 }

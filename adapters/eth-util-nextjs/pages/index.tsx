@@ -10,8 +10,8 @@ function handleAccountsChanged(e: string) {
 
 const Home: NextPage = () => {
 
-  const apiCred = "eyJ2ZXJzaW9uIjoieDI1NTE5LXhzYWxzYTIwLXBvbHkxMzA1Iiwibm9uY2UiOiJmK0ZRUGVLek5KcldFZWh2SktBUTV1WStocE1CYVlRNCIsImVwaGVtUHVibGljS2V5IjoiZm1RV3poaWhYMHhIdkp2aGQ1d0dGQ2xxeXBOWDZWVHZDYUhjdkVZc2hYQT0ifQ=="
-  const apiEncryptionKey = 'TjhEdXgvYWgzZWUyZExqS1VBSERRT0pFNWNYQUMvV2ZsRlVGMFVmVW1HUT0='
+  const apiCred = "eyJ2ZXJzaW9uIjoieDI1NTE5LXhzYWxzYTIwLXBvbHkxMzA1Iiwibm9uY2UiOiIvL1RsbWd3aGw3bC9KazlmWGxRUUo3NUNibDUvVjRJZyIsImVwaGVtUHVibGljS2V5Ijoid0g2ZkdjT1Qxcit4MUNiTWV5SUNsSHRNVWlBVXhvTFp4SGVYZzd2SHdoST0ifQ=="
+  const apiEncryptionKey = 'cFVkbitiSEF4V3NmeHVtSStTWFpRbEgvUE1IYnRJdGZFN3c0SHMwNjV3az0='
 
   const [license, setLicense] = useState('')
   const [buyerAccount, setBuyerAccount] = useState('')

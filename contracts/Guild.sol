@@ -2,7 +2,91 @@
 
 pragma solidity ^0.8.7;
 
-import "./Shop.sol";
+interface IShopFactory {
+    function createShop(
+        address owner,
+        string memory _shopName,
+        string memory _detailsCId
+    ) external;
+
+    function getLatestShopAddress() external view returns (address);
+}
+
+interface IShop {
+    struct Product {
+        uint256 productId;
+        string contentCId;
+        string detailsCId;
+        string licenseHash;
+        string lockedLicense;
+        uint256 price;
+        uint256 stock;
+        uint256 ratingsCount;
+        uint256 ratingsSum; // [0] = number of ratings, [1] = sum of ratings
+        uint256 salesCount;
+        bool isAvailable;
+    }
+
+    struct Sale {
+        uint256 saleId;
+        address buyer;
+        string publicKey;
+        uint256 productId;
+        uint256 amount;
+        uint256 saleDeadline;
+        bytes32 unlockedLicense0;
+        bytes32 unlockedLicense1;
+        uint256 rating;
+        SaleStatus status;
+    }
+    enum SaleStatus {
+        Requested,
+        Refunded,
+        Completed,
+        Rated
+    }
+
+    function getOwner() external view returns (address);
+
+    function getSalesCount() external view returns (uint256);
+
+    function getSale(uint256 _saleId) external view returns (Sale memory);
+
+    function getProduct(uint256 _productId)
+        external
+        view
+        returns (Product memory);
+
+    function addProduct(
+        string memory _contentCId,
+        string memory _detailsCId,
+        string memory _licenseHash,
+        string memory _lockedLicense,
+        uint256 _price,
+        uint256 _stock
+    ) external;
+
+    function requestSale(
+        address _buyer,
+        uint256 _productId,
+        string memory _publicKey
+    ) external payable;
+
+    function getRefund(uint256 _saleId) external payable;
+
+    function closeSale(uint256 _saleId, bytes32[2] memory _unlockedLicense)
+        external;
+
+    function addRating(uint256 _saleId, uint256 _rating) external;
+
+    function shelfProduct(uint256 _productId) external;
+
+    function changePrice(uint256 _productId, uint256 _price) external;
+
+    function changeStock(uint256 _productId, uint256 _stock) external;
+
+    function withdraw(uint256 _amount) external payable;
+}
 
 interface IUnlockOracleClient {
     function addRequest(string memory _lockedLicense, string memory _publicKey)
@@ -20,10 +104,12 @@ contract Guild {
 
     address owner;
     address oracleClient;
+    address public shopFactory;
     address[] public shops;
     uint256 ratingReward = 10;
     uint256 serviceTax = 50;
     uint256 constant MAX_UINT = 2**256 - 1;
+    IShopFactory FactoryInterface;
 
     mapping(uint256 => UnlockRequest) unlockRequests;
     uint256[] pendingRequests;
@@ -38,7 +124,7 @@ contract Guild {
     // ..close credits periodically
 
     // Events, indexed can be decided based on UI functionality choice
-    event ShopCreated(string indexed shopName, string detailsCId);
+    event IShopCreated(string indexed shopName, string detailsCId);
     event RequestedSale(uint256 shopId, uint256 productId, uint256 saleId);
     event Refunded(uint256 shopId, uint256 saleId);
     event PriceChanged(uint256 shopId, uint256 productId, uint256 newPrice);
@@ -49,13 +135,13 @@ contract Guild {
     }
 
     modifier onlyShopOwner(uint256 _shopId) {
-        require(msg.sender == Shop(shops[_shopId]).owner());
+        require(msg.sender == IShop(shops[_shopId]).getOwner());
         _;
     }
 
     modifier onlyBuyer(uint256 _shopId, uint256 _saleId) {
-        (, address buyer, , , , , , ) = Shop(shops[_shopId]).sales(_saleId);
-        require(msg.sender == buyer);
+        IShop.Sale memory sale = IShop(shops[_shopId]).getSale(_saleId);
+        require(msg.sender == sale.buyer);
         _;
     }
 
@@ -64,9 +150,11 @@ contract Guild {
         _;
     }
 
-    constructor(address _oracleClient) {
+    constructor(address _oracleClient, address _shopFactory) {
         owner = msg.sender;
         oracleClient = _oracleClient;
+        shopFactory = _shopFactory;
+        FactoryInterface = IShopFactory(shopFactory);
     }
 
     function changeOracle(address _oracle) external onlyOwner {
@@ -77,10 +165,12 @@ contract Guild {
         external
     {
         require(!isShopNameTaken[_shopName], "Shop name already taken");
-        Shop shop = new Shop(msg.sender, _shopName, _detailsCId);
-        shops.push(address(shop));
+
+        FactoryInterface.createShop(msg.sender, _shopName, _detailsCId);
+
+        shops.push(FactoryInterface.getLatestShopAddress());
         shopNameToShopId[_shopName] = shops.length - 1;
-        emit ShopCreated(_shopName, _detailsCId);
+        emit IShopCreated(_shopName, _detailsCId);
     }
 
     function addProduct(
@@ -92,7 +182,7 @@ contract Guild {
         uint256 _price,
         uint256 _stock
     ) external onlyShopOwner(_shopId) {
-        Shop(shops[_shopId]).addProduct(
+        IShop(shops[_shopId]).addProduct(
             _contentCId,
             _detailsCId,
             _licenseHash,
@@ -108,23 +198,27 @@ contract Guild {
         string memory _publicKey,
         uint256 _redeemCredits
     ) external payable {
-        require(msg.sender != Shop(shops[_shopId]).owner());
+        require(msg.sender != IShop(shops[_shopId]).getOwner());
 
         require(buyerCredits[msg.sender] >= _redeemCredits);
         buyerCredits[msg.sender] -= _redeemCredits;
 
-        Shop(shops[_shopId]).requestSale{
+        IShop(shops[_shopId]).requestSale{
             value: msg.value + _redeemCredits - ratingReward - serviceTax
         }(msg.sender, _productId, _publicKey);
 
-        (uint256 saleId, , , , , , , ) = Shop(shops[_shopId]).sales(
-            Shop(shops[_shopId]).salesCount() - 1
+        IShop.Sale memory sale = IShop(shops[_shopId]).getSale(
+            IShop(shops[_shopId]).getSalesCount() - 1
         );
 
-        (, , , , string memory lockedLicense, , , , ) = Shop(shops[_shopId])
-            .products(_productId);
+        IShop.Product memory product = IShop(shops[_shopId]).getProduct(
+            _productId
+        );
 
-        IUnlockOracleClient(oracleClient).addRequest(lockedLicense, _publicKey);
+        IUnlockOracleClient(oracleClient).addRequest(
+            product.lockedLicense,
+            _publicKey
+        );
 
         uint256 unlockRequestId = IUnlockOracleClient(oracleClient)
             .requestsCount() - 1;
@@ -132,13 +226,13 @@ contract Guild {
         unlockRequests[unlockRequestId] = UnlockRequest({
             requestId: unlockRequestId,
             shopId: _shopId,
-            saleId: saleId
+            saleId: sale.saleId
         });
 
         pendingRequests.push(unlockRequestId);
         requestIdToRequestIndex[unlockRequestId] = pendingRequests.length - 1;
 
-        emit RequestedSale(_shopId, _productId, saleId);
+        emit RequestedSale(_shopId, _productId, sale.saleId);
     }
 
     function getRefund(uint256 _shopId, uint256 _saleId)
@@ -146,7 +240,7 @@ contract Guild {
         payable
         onlyBuyer(_shopId, _saleId)
     {
-        Shop(shops[_shopId]).getRefund(_saleId);
+        IShop(shops[_shopId]).getRefund(_saleId);
         (bool sent, ) = msg.sender.call{value: ratingReward}("");
         require(sent, "Failed to refund rating reward"); // refund with a multiplier?
         emit Refunded(_shopId, _saleId);
@@ -157,7 +251,7 @@ contract Guild {
         uint256 _saleId,
         uint256 _rating
     ) public onlyBuyer(_shopId, _saleId) {
-        Shop(shops[_shopId]).addRating(_saleId, _rating);
+        IShop(shops[_shopId]).addRating(_saleId, _rating);
         buyerCredits[msg.sender] += ratingReward;
     }
 
@@ -165,7 +259,7 @@ contract Guild {
         external
         onlyShopOwner(_shopId)
     {
-        Shop(shops[_shopId]).shelfProduct(_productId);
+        IShop(shops[_shopId]).shelfProduct(_productId);
     }
 
     function changePrice(
@@ -173,7 +267,7 @@ contract Guild {
         uint256 _productId,
         uint256 _price
     ) external onlyShopOwner(_shopId) {
-        Shop(shops[_shopId]).changePrice(_productId, _price);
+        IShop(shops[_shopId]).changePrice(_productId, _price);
         emit PriceChanged(_shopId, _productId, _price);
     }
 
@@ -182,7 +276,7 @@ contract Guild {
         uint256 _productId,
         uint256 _stock
     ) external onlyShopOwner(_shopId) {
-        Shop(shops[_shopId]).changeStock(_productId, _stock);
+        IShop(shops[_shopId]).changeStock(_productId, _stock);
     }
 
     function withdrawFromShop(uint256 _shopId, uint256 _amount)
@@ -190,14 +284,14 @@ contract Guild {
         payable
         onlyShopOwner(_shopId)
     {
-        Shop(shops[_shopId]).withdraw(_amount);
+        IShop(shops[_shopId]).withdraw(_amount);
     }
 
     function completeUnlock(
         uint256 _requestId,
         bytes32[2] memory _unlockedLicense
     ) external onlyOracleClient {
-        Shop(shops[unlockRequests[_requestId].shopId]).closeSale(
+        IShop(shops[unlockRequests[_requestId].shopId]).closeSale(
             unlockRequests[_requestId].saleId,
             _unlockedLicense
         );
