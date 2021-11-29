@@ -122,8 +122,8 @@ contract Guild {
     address oracleClient;
     address public shopFactory;
     address[] public shops;
-    uint256 ratingReward = 10;
-    uint256 serviceTax = 50;
+    uint256 ratingReward = 0.001 ether;
+    uint256 serviceTax = 0.2 ether;
     uint256 constant MAX_UINT = 2**256 - 1;
     IShopFactory FactoryInterface;
 
@@ -256,9 +256,11 @@ contract Guild {
         payable
         onlyBuyer(_shopId, _saleId)
     {
+        // increment buyerCredit of the buyer with the rating reward
+        buyerCredits[msg.sender] += ratingReward;
+
         IShop(shops[_shopId]).getRefund(_saleId);
-        (bool sent, ) = msg.sender.call{value: ratingReward}("");
-        require(sent, "Failed to refund rating reward"); // refund with a multiplier?
+
         emit Refunded(_shopId, _saleId);
     }
 
@@ -363,5 +365,13 @@ contract Guild {
         returns (uint256[] memory)
     {
         return IShop(shops[_shopId]).getClosedSaleIds();
+    }
+
+    function setServiceTax(uint256 newServiceTax) external onlyOwner {
+        serviceTax = newServiceTax;
+    }
+
+    function setRatingReward(uint256 newRatingReward) external onlyOwner {
+        ratingReward = newRatingReward;
     }
 }

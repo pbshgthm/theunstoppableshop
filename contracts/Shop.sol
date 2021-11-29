@@ -148,7 +148,9 @@ contract Shop {
         ];
         openSaleIds.pop();
         delete openSaleIdToIndex[_saleId];
-        // Have to decrement salesCount here, because the sale did not go through.
+
+        // decrementing product.SalesCount
+        products[sales[_saleId].productId].salesCount--;
         (bool sent, ) = sales[_saleId].buyer.call{value: sales[_saleId].amount}(
             ""
         );
