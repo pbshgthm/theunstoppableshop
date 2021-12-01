@@ -12,7 +12,7 @@ contract Shop {
         uint256 price;
         uint256 stock;
         uint256 ratingsCount;
-        uint256 ratingsSum; // [0] = number of ratings, [1] = sum of ratings
+        uint256 ratingsSum;
         uint256 salesCount;
         bool isAvailable;
     }
