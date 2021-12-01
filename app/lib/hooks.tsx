@@ -32,8 +32,11 @@ export function useEvents(account: string) {
       fromBlock: "0x0",
       toBlock: 'latest'
     })
-    return response
+    return response.then((logs: ethers.providers.Log[]) => {
+      return logs.map(log => ILink.parseLog(log))
+    })
   }
+  let ILink = new ethers.utils.Interface(chainLinkABI)
   const { data, error } = useSWR(['events', account], fetcher)
   return { data, error }
 }
