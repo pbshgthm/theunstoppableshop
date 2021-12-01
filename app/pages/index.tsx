@@ -1,5 +1,5 @@
 import type { NextPage } from 'next'
-import { useEvents, sendMoney, useLinkBalance } from '../lib/hooks'
+import { useEvents, sendEther, sendLink, useLinkBalance } from '../lib/hooks'
 import { useMetaMask } from "metamask-react"
 
 
@@ -9,27 +9,27 @@ function Login() {
 
   if (status === "initializing")
     return <div>
-      Synchronisation with MetaMask ongoing...
+      syncing metamask...
     </div>
 
   if (status === "unavailable")
     return <div>
-      MetaMask not available
+      metaMask not available
     </div>
 
   if (status === "notConnected")
     return <button onClick={connect}>
-      Connect to MetaMask
+      connect to metamask
     </button>
 
   if (status === "connecting")
     return <div>
-      Connecting...
+      connecting...
     </div>
 
   if (status === "connected")
     return <div>
-      Connected account: {account}
+      connected account: {account}
     </div>
 
   return null
@@ -45,9 +45,11 @@ const Home: NextPage = () => {
     <div>
       <Login />
       <br /><br />
-      Link Balance : {linkBalance}
+      link Balance : {linkBalance}
       <br /><br /><br />
-      <button onClick={() => { sendMoney(ethereum) }}>send money</button>
+      <button onClick={() => { sendLink(ethereum) }}>send link</button>
+      <br /><br /><br />
+      <button onClick={() => { sendEther(ethereum) }}>send ether</button>
       <br /><br /><br />
       <pre>{JSON.stringify(events, null, 2)}</pre>
     </div>
