@@ -1,0 +1,49 @@
+import { ethers } from 'ethers'
+import useSWR from 'swr'
+import { chainLinkABI } from './abi'
+
+const rpcApi = 'https://polygon-mumbai.g.alchemy.com/v2/9rE76R64EAB61z4CE3BTnMwza-7R4HiV'
+const provider = new ethers.providers.JsonRpcProvider(rpcApi)
+const chainLinkAddress = '0x326C977E6efc84E512bB9C30f76E30c160eD06FB'
+
+
+export function useLinkBalance(account: string) {
+  const ChainLink = new ethers.Contract(chainLinkAddress, chainLinkABI, provider)
+  async function fetcher() {
+    return await ChainLink.balanceOf(account).then((balance: ethers.BigNumberish) => {
+      return ethers.utils.formatEther(balance)
+    })
+  }
+  const { data, error } = useSWR(['balance', account], fetcher)
+  return { data, error }
+}
+
+export function useEvents(account: string) {
+
+  async function fetcher() {
+    const response = provider.getLogs({
+      address: '0x326C977E6efc84E512bB9C30f76E30c160eD06FB',
+      topics: [
+        "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+        ethers.utils.hexZeroPad(account, 32)
+      ],
+      fromBlock: "0x0",
+      toBlock: 'latest'
+    })
+    return response
+  }
+  const { data, error } = useSWR(['events', account], fetcher)
+  return { data, error }
+}
+
+export function sendMoney(
+  ethereum: ethers.providers.ExternalProvider | ethers.providers.JsonRpcFetchFunc) {
+  const signer = new ethers.providers.Web3Provider(ethereum).getSigner()
+  const ChainLink = new ethers.Contract(chainLinkAddress, chainLinkABI, signer)
+  const amount = ethers.utils.parseEther('0.1')
+  const tx = ChainLink.functions.transfer(
+    '0xf9c03776f126Ed6E43fBD2714A4bD293ba5E3515',
+    amount
+  )
+  console.log('tx', tx)
+}
