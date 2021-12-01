@@ -30,6 +30,16 @@ contract Shop {
         SaleStatus status;
     }
 
+    struct ShopInfo {
+        address guild;
+        address owner;
+        uint256 shopBalance;
+        string detailsCId;
+        string shopName;
+        uint256 productsCount;
+        uint256 salesCount;
+    }
+
     enum SaleStatus {
         Requested,
         Refunded,
@@ -55,7 +65,7 @@ contract Shop {
     mapping(uint256 => uint256) openSaleIdToIndex;
 
     modifier onlyGuild() {
-        require(msg.sender == guild);
+        require(msg.sender == guild, "Only guild can call this function");
         _;
     }
 
@@ -63,10 +73,11 @@ contract Shop {
 
     constructor(
         address _owner,
+        address _guild,
         string memory _shopName,
         string memory _detailsCId
     ) {
-        guild = msg.sender;
+        guild = _guild;
         owner = _owner;
         detailsCId = _detailsCId;
         shopName = _shopName;
@@ -138,7 +149,9 @@ contract Shop {
         ];
         openSaleIds.pop();
         delete openSaleIdToIndex[_saleId];
-        // Have to decrement salesCount here, because the sale did not go through.
+
+        // decrementing product.SalesCount
+        products[sales[_saleId].productId].salesCount--;
         (bool sent, ) = sales[_saleId].buyer.call{value: sales[_saleId].amount}(
             ""
         );
@@ -153,7 +166,7 @@ contract Shop {
         require(sales[_saleId].saleDeadline > block.timestamp);
 
         sales[_saleId].unlockedLicense0 = _unlockedLicense[0];
-        sales[_saleId].unlockedLicense1 = _unlockedLicense[0];
+        sales[_saleId].unlockedLicense1 = _unlockedLicense[1];
         sales[_saleId].status = SaleStatus.Completed;
 
         shopBalance += sales[_saleId].amount;
@@ -218,5 +231,26 @@ contract Shop {
 
     function getSalesCount() external view returns (uint256) {
         return salesCount;
+    }
+
+    function getShopInfo() external view returns (ShopInfo memory) {
+        return
+            ShopInfo({
+                guild: guild,
+                owner: owner,
+                shopBalance: shopBalance,
+                detailsCId: detailsCId,
+                shopName: shopName,
+                productsCount: productsCount,
+                salesCount: salesCount
+            });
+    }
+
+    function getOpenSaleIds() external view returns (uint256[] memory) {
+        return openSaleIds;
+    }
+
+    function getClosedSaleIds() external view returns (uint256[] memory) {
+        return closeSaleIds;
     }
 }

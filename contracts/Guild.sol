@@ -39,6 +39,16 @@ interface IShop {
         uint256 rating;
         SaleStatus status;
     }
+
+    struct ShopInfo {
+        address guild;
+        address owner;
+        uint256 shopBalance;
+        string detailsCId;
+        string shopName;
+        uint256 productsCount;
+        uint256 salesCount;
+    }
     enum SaleStatus {
         Requested,
         Refunded,
@@ -56,6 +66,12 @@ interface IShop {
         external
         view
         returns (Product memory);
+
+    function getShopInfo() external view returns (ShopInfo memory);
+
+    function getOpenSaleIds() external view returns (uint256[] memory);
+
+    function getClosedSaleIds() external view returns (uint256[] memory);
 
     function addProduct(
         string memory _contentCId,
@@ -106,8 +122,8 @@ contract Guild {
     address oracleClient;
     address public shopFactory;
     address[] public shops;
-    uint256 ratingReward = 10;
-    uint256 serviceTax = 50;
+    uint256 ratingReward = 0.001 ether;
+    uint256 serviceTax = 0.2 ether;
     uint256 constant MAX_UINT = 2**256 - 1;
     IShopFactory FactoryInterface;
 
@@ -130,23 +146,29 @@ contract Guild {
     event PriceChanged(uint256 shopId, uint256 productId, uint256 newPrice);
 
     modifier onlyOwner() {
-        require(msg.sender == owner);
+        require(msg.sender == owner, "Only owner can call the function!");
         _;
     }
 
     modifier onlyShopOwner(uint256 _shopId) {
-        require(msg.sender == IShop(shops[_shopId]).getOwner());
+        require(
+            msg.sender == IShop(shops[_shopId]).getOwner(),
+            "only shop owner can call the function!"
+        );
         _;
     }
 
     modifier onlyBuyer(uint256 _shopId, uint256 _saleId) {
         IShop.Sale memory sale = IShop(shops[_shopId]).getSale(_saleId);
-        require(msg.sender == sale.buyer);
+        require(msg.sender == sale.buyer, "Only buyer can call the function!");
         _;
     }
 
     modifier onlyOracleClient() {
-        require(msg.sender == oracleClient);
+        require(
+            msg.sender == oracleClient,
+            "Only oracle client can call the function!"
+        );
         _;
     }
 
@@ -170,6 +192,7 @@ contract Guild {
 
         shops.push(FactoryInterface.getLatestShopAddress());
         shopNameToShopId[_shopName] = shops.length - 1;
+        isShopNameTaken[_shopName] = true;
         emit IShopCreated(_shopName, _detailsCId);
     }
 
@@ -240,9 +263,11 @@ contract Guild {
         payable
         onlyBuyer(_shopId, _saleId)
     {
+        // increment buyerCredit of the buyer with the rating reward
+        buyerCredits[msg.sender] += ratingReward;
+
         IShop(shops[_shopId]).getRefund(_saleId);
-        (bool sent, ) = msg.sender.call{value: ratingReward}("");
-        require(sent, "Failed to refund rating reward"); // refund with a multiplier?
+
         emit Refunded(_shopId, _saleId);
     }
 
@@ -306,5 +331,54 @@ contract Guild {
         pendingRequests.pop();
         delete requestIdToRequestIndex[_requestId];
         delete unlockRequests[_requestId];
+    }
+
+    // getter functions
+    function getSale(uint256 _shopId, uint256 _saleId)
+        external
+        view
+        returns (IShop.Sale memory)
+    {
+        return IShop(shops[_shopId]).getSale(_saleId);
+    }
+
+    function getProduct(uint256 _shopId, uint256 _productId)
+        external
+        view
+        returns (IShop.Product memory)
+    {
+        return IShop(shops[_shopId]).getProduct(_productId);
+    }
+
+    function getShopInfo(uint256 _shopId)
+        external
+        view
+        returns (IShop.ShopInfo memory)
+    {
+        return IShop(shops[_shopId]).getShopInfo();
+    }
+
+    function getOpenSaleIds(uint256 _shopId)
+        external
+        view
+        returns (uint256[] memory)
+    {
+        return IShop(shops[_shopId]).getOpenSaleIds();
+    }
+
+    function getClosedSaleIds(uint256 _shopId)
+        external
+        view
+        returns (uint256[] memory)
+    {
+        return IShop(shops[_shopId]).getClosedSaleIds();
+    }
+
+    function setServiceTax(uint256 newServiceTax) external onlyOwner {
+        serviceTax = newServiceTax;
+    }
+
+    function setRatingReward(uint256 newRatingReward) external onlyOwner {
+        ratingReward = newRatingReward;
     }
 }
