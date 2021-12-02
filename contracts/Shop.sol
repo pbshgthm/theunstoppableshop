@@ -24,8 +24,7 @@ contract Shop {
         uint256 productId;
         uint256 amount;
         uint256 saleDeadline;
-        bytes32 unlockedLicense0;
-        bytes32 unlockedLicense1;
+        string unlockedLicense;
         uint256 rating;
         SaleStatus status;
     }
@@ -128,8 +127,7 @@ contract Shop {
             productId: _productId,
             amount: msg.value,
             saleDeadline: block.timestamp + 10000,
-            unlockedLicense0: bytes32(0),
-            unlockedLicense1: bytes32(0),
+            unlockedLicense: "",
             rating: 0,
             status: SaleStatus.Requested
         });
@@ -158,15 +156,14 @@ contract Shop {
         require(sent, "Could not send refund");
     }
 
-    function closeSale(uint256 _saleId, bytes32[2] memory _unlockedLicense)
+    function closeSale(uint256 _saleId, string memory _unlockedLicense)
         external
         onlyGuild
     {
         require(sales[_saleId].status == SaleStatus.Requested);
         require(sales[_saleId].saleDeadline > block.timestamp);
 
-        sales[_saleId].unlockedLicense0 = _unlockedLicense[0];
-        sales[_saleId].unlockedLicense1 = _unlockedLicense[1];
+        sales[_saleId].unlockedLicense = _unlockedLicense;
         sales[_saleId].status = SaleStatus.Completed;
 
         shopBalance += sales[_saleId].amount;

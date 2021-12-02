@@ -11,12 +11,12 @@ export default function handler(
     const publicKeyStr = sigUtil.getEncryptionPublicKey(privateKey)
     const apiPublicKey = Buffer.from(publicKeyStr).toString()
     const data = {
-      publicKey: Buffer.from(apiPublicKey).toString('base64'),
-      apiCred: Buffer.from(JSON.stringify({
+      publicKey: Buffer.from(apiPublicKey).toString(),
+      encryptionParams: {
         version: 'x25519-xsalsa20-poly1305',
         nonce: process.env.API_NONCE,
         ephemPublicKey: process.env.EPH_PUBLIC_KEY,
-      })).toString('base64'),
+      }
     }
     res.status(200).json(data)
   } catch (error) {

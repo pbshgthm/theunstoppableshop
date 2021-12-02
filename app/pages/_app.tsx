@@ -5,7 +5,7 @@ import type { AppProps } from 'next/app'
 
 function App({ Component, pageProps }: AppProps) {
   return (
-    < MetaMaskProvider >
+    <MetaMaskProvider>
       <Component {...pageProps} />
     </MetaMaskProvider >
   )

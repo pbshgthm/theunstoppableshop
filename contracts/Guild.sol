@@ -34,8 +34,7 @@ interface IShop {
         uint256 productId;
         uint256 amount;
         uint256 saleDeadline;
-        bytes32 unlockedLicense0;
-        bytes32 unlockedLicense1;
+        string unlockedLicense;
         uint256 rating;
         SaleStatus status;
     }
@@ -90,7 +89,7 @@ interface IShop {
 
     function getRefund(uint256 _saleId) external payable;
 
-    function closeSale(uint256 _saleId, bytes32[2] memory _unlockedLicense)
+    function closeSale(uint256 _saleId, string memory _unlockedLicense)
         external;
 
     function addRating(uint256 _saleId, uint256 _rating) external;
@@ -221,7 +220,7 @@ contract Guild {
         string memory _publicKey,
         uint256 _redeemCredits
     ) external payable {
-        require(msg.sender != IShop(shops[_shopId]).getOwner());
+        //require(msg.sender != IShop(shops[_shopId]).getOwner());
 
         require(buyerCredits[msg.sender] >= _redeemCredits);
         buyerCredits[msg.sender] -= _redeemCredits;
@@ -312,10 +311,10 @@ contract Guild {
         IShop(shops[_shopId]).withdraw(_amount);
     }
 
-    function completeUnlock(
-        uint256 _requestId,
-        bytes32[2] memory _unlockedLicense
-    ) external onlyOracleClient {
+    function completeUnlock(uint256 _requestId, string memory _unlockedLicense)
+        external
+        onlyOracleClient
+    {
         IShop(shops[unlockRequests[_requestId].shopId]).closeSale(
             unlockRequests[_requestId].saleId,
             _unlockedLicense

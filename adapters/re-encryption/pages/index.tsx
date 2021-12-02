@@ -7,8 +7,13 @@ import { useEffect, useState } from 'react'
 
 const Home: NextPage = () => {
 
-  const apiCred = "eyJ2ZXJzaW9uIjoieDI1NTE5LXhzYWxzYTIwLXBvbHkxMzA1Iiwibm9uY2UiOiJmK0ZRUGVLek5KcldFZWh2SktBUTV1WStocE1CYVlRNCIsImVwaGVtUHVibGljS2V5IjoiZm1RV3poaWhYMHhIdkp2aGQ1d0dGQ2xxeXBOWDZWVHZDYUhjdkVZc2hYQT0ifQ=="
-  const apiEncryptionKey = "TjhEdXgvYWgzZWUyZExqS1VBSERRT0pFNWNYQUMvV2ZsRlVGMFVmVW1HUT0="
+  const apiCred = {
+    "version": "x25519-xsalsa20-poly1305",
+    "nonce": "f+FQPeKzNJrWEehvJKAQ5uY+hpMBaYQ4",
+    "ephemPublicKey": "fmQWzhihX0xHvJvhd5wGFClqypNX6VTvCaHcvEYshXA="
+  }
+
+  const apiEncryptionKey = "N8Dux/ah3ee2dLjKUAHDQOJE5cXAC/WflFUF0UfUmGQ="
 
   const [license, setLicense] = useState('')
   const [buyerAccount, setBuyerAccount] = useState('')
@@ -31,35 +36,31 @@ const Home: NextPage = () => {
             params: [account[0]], // you must have access to the specified account
           })
           .then((result: string) => {
-            setBuyerEncryptionKey(Buffer.from(result).toString('base64'))
+            setBuyerEncryptionKey(Buffer.from(result).toString())
           })
       })
   }
 
   function lockLicense() {
-    const apiEncB64 = Buffer.from(apiEncryptionKey, 'base64').toString('utf-8')
-    const encStr = encryptStr(license, apiEncB64)
-    const encB64 = Buffer.from(encStr).toString('base64')
-    setSellerLockedLicense(encB64)
+    const encStr = encryptStr(license, apiEncryptionKey)
+    setSellerLockedLicense(Buffer.from(encStr).toString())
   }
 
   function getLicense() {
-
-    const data = Buffer.from(buyerApprovedLicense, 'base64').toString('utf-8')
-    console.log('data', data)
     window.ethereum
       .request({
         method: 'eth_decrypt',
-        params: [data, buyerAccount],
+        params: [buyerApprovedLicense, buyerAccount],
       })
       .then((decryptedMessage: string) =>
         setBuyerLicense(decryptedMessage)
       )
   }
+
   function approveLicense() {
     const params = {
-      sourceEncryptedText: contractLockedLicense,
-      targetPublicKey: contractBuyerKey,
+      sourceEncryptedText: Buffer.from(contractLockedLicense).toString('base64'),
+      targetPublicKey: Buffer.from(contractBuyerKey).toString('base64'),
     }
 
     const queryParams = new URLSearchParams(params).toString()
@@ -91,6 +92,10 @@ const Home: NextPage = () => {
             <div className="text-gray-600 w-44">Locked License</div>
             <div className="text-gray-500 w-96 break-words">{sellerLockedLicense}</div>
           </div>
+          <div className="flex flex-row gap-2 mt-4">
+            <div className="text-gray-600 w-44">Locked License Base64</div>
+            <div className="text-gray-500 w-96 break-words">{Buffer.from(sellerLockedLicense).toString('base64')}</div>
+          </div>
           <div className="h-1 bg-purple-200 my-12"></div>
           <div className="text-xl text-gray-600">Contract</div>
           <div className="flex flex-row gap-2 mt-4">
@@ -111,10 +116,7 @@ const Home: NextPage = () => {
           <div className="flex flex-row gap-2 mt-4">
             <div className="text-gray-600 w-44">Full License</div>
             <div className="text-gray-500 w-96 break-words">{
-              Buffer.from(JSON.stringify({
-                ...JSON.parse(Buffer.from(apiCred, 'base64').toString()),
-                ciphertext: approvedLicense,
-              })).toString('base64')
+              JSON.stringify({ ...apiCred, ciphertext: approvedLicense })
             }</div>
           </div>
         </div>
@@ -126,6 +128,10 @@ const Home: NextPage = () => {
           <div className="flex flex-row gap-2 mt-4">
             <div className="text-gray-600 w-44">Buyer Encryption Key</div>
             <div className="text-gray-500 w-96 break-words">{buyerEncryptionKey}</div>
+          </div>
+          <div className="flex flex-row gap-2 mt-4">
+            <div className="text-gray-600 w-44">Buyer Encryption Key Base64</div>
+            <div className="text-gray-500 w-96 break-words">{Buffer.from(buyerEncryptionKey).toString('base64')}</div>
           </div>
           <div className="flex flex-row gap-2 mt-4">
             <div className="text-gray-600 w-44">Approved License</div>
