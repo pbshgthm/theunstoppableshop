@@ -1,0 +1,31 @@
+{
+  "name": "eth-util-nextjs",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@metamask/eth-sig-util": "^4.0.0",
+    "bytes32": "^0.0.3",
+    "crypto-js": "^4.1.1",
+    "next": "12.0.4",
+    "react": "17.0.2",
+    "react-dom": "17.0.2"
+  },
+  "devDependencies": {
+    "@types/crypto-js": "^4.0.2",
+    "@types/eth-sig-util": "^2.1.1",
+    "@types/ethjs-util": "^0.1.0",
+    "@types/node": "16.11.10",
+    "@types/react": "17.0.36",
+    "autoprefixer": "^10.4.0",
+    "eslint": "7",
+    "eslint-config-next": "12.0.4",
+    "postcss": "^8.4.1",
+    "tailwindcss": "^2.2.19",
+    "typescript": "4.5.2"
+  }
+}

@@ -5,10 +5,8 @@ pragma solidity ^0.8.7;
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 
 interface IGuild {
-    function completeUnlock(
-        uint256 _requestId,
-        bytes32[2] memory _unlockedLicense
-    ) external;
+    function completeUnlock(uint256 _requestId, string memory _unlockedLicense)
+        external;
 }
 
 contract UnlockOracleClient is ChainlinkClient {
@@ -31,10 +29,8 @@ contract UnlockOracleClient is ChainlinkClient {
     bytes32 jobId = "c6a006e4f4844754a6524445acde84a0";
     uint256 fee = 0.01 * 10**18;
     address linkTokenContract = 0x326C977E6efc84E512bB9C30f76E30c160eD06FB;
-    string urlString1 =
-        "https://theunstoppabledev.vercel.app/api/byte32?sourceEncryptedText=";
 
-    string urlString2 = "&targetPublicKey=";
+    string baseUrl = "https://re-encrypt.now.sh/api/re-encrypt";
 
     function setConstants(
         address _oracle,
@@ -48,11 +44,8 @@ contract UnlockOracleClient is ChainlinkClient {
         linkTokenContract = _linkTokenContract;
     }
 
-    function setUrl(string memory _urlString1, string memory _urlString2)
-        external
-    {
-        urlString1 = _urlString1;
-        urlString2 = _urlString2;
+    function setUrl(string memory _baseUrl) external {
+        baseUrl = _baseUrl;
     }
 
     function requestCount() external view returns (uint256) {
@@ -84,19 +77,20 @@ contract UnlockOracleClient is ChainlinkClient {
 
     function createUrl(string memory _lockedLicense, string memory _publicKey)
         internal
-        pure
+        view
         returns (string memory)
     {
         return
             string(
                 abi.encodePacked(
-                    "https://theunstoppabledev.vercel.app/api/byte32?sourceEncryptedText=",
+                    baseUrl,
+                    "?encryptedText=",
                     _lockedLicense,
-                    "&targetPublicKey=",
+                    "&publicKey=",
                     _publicKey
                 )
             );
-    } // change the url
+    }
 
     function addRequest(string memory _lockedLicense, string memory _publicKey)
         external
@@ -109,7 +103,7 @@ contract UnlockOracleClient is ChainlinkClient {
             this.fulfill.selector
         );
         request0.add("get", url);
-        request0.add("path", "p1");
+        request0.add("path", "reEncryptedBytes32_0");
 
         Chainlink.Request memory request1 = buildChainlinkRequest(
             jobId,
@@ -117,7 +111,7 @@ contract UnlockOracleClient is ChainlinkClient {
             this.fulfill.selector
         );
         request1.add("get", url);
-        request1.add("path", "p2");
+        request1.add("path", "reEncryptedBytes32_1");
 
         bytes32 jobId0 = sendChainlinkRequestTo(oracle, request0, fee);
         bytes32 jobId1 = sendChainlinkRequestTo(oracle, request1, fee);
@@ -151,9 +145,10 @@ contract UnlockOracleClient is ChainlinkClient {
             result[jobs[jobs[_jobId].pairJobId].index] = jobs[
                 jobs[_jobId].pairJobId
             ].result;
+            string memory license = string(abi.encodePacked(result));
             IGuild(jobs[_jobId].guild).completeUnlock(
                 jobs[_jobId].requestId,
-                result
+                license
             );
         } else {
             jobs[_jobId].result = _data;
