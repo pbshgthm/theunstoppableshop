@@ -5,7 +5,7 @@ import { payableABI } from './payable-abi'
 
 const rpcApi = 'https://polygon-mumbai.g.alchemy.com/v2/9rE76R64EAB61z4CE3BTnMwza-7R4HiV'
 const chainLinkAddress = '0x326C977E6efc84E512bB9C30f76E30c160eD06FB'
-const payableAddress = '0x5749c79b3Ec884234c8510c638F35B8524BbC2B8'
+const payableAddress = '0x32dac56F7bd946291b4f23852763d739e34923C6'
 const provider = new ethers.providers.JsonRpcProvider(rpcApi)
 
 
@@ -53,11 +53,13 @@ export function sendLink(
   console.log('tx', tx)
 }
 
-//
-export function sendEther(
+// This function is used to send ether to a contract
+export async function sendEther(
   ethereum: ethers.providers.ExternalProvider | ethers.providers.JsonRpcFetchFunc) {
   const signer = new ethers.providers.Web3Provider(ethereum).getSigner()
+  console.log('signer', signer)
   const Payable = new ethers.Contract(payableAddress, payableABI, signer)
+  console.log(Payable, 'Payable')
   const tx = Payable.deposit(
     { value: ethers.utils.parseEther("0.000001") }
   )
