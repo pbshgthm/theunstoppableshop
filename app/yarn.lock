@@ -1806,7 +1806,14 @@ ethereum-multicall@^2.9.0:
     "@ethersproject/providers" "^5.0.10"
     ethers "^5.0.15"
 
-ethers@^5.0.15:
+ethers-multicall@^0.2.1:
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/ethers-multicall/-/ethers-multicall-0.2.1.tgz#0c01dc50f3b87c93be11e39bc8bc668bfa762b60"
+  integrity sha512-buSg3j75HhMnRiZ+hIXfJYA/MUZbhukE1oczeluM7O+4yWjhqI98ADcQ0bPr8EOpwtV4J3Eba47fkbx5GJpz5Q==
+  dependencies:
+    ethers "^5.0.0"
+
+ethers@^5.0.0, ethers@^5.0.15:
   version "5.5.2"
   resolved "https://registry.yarnpkg.com/ethers/-/ethers-5.5.2.tgz#cd2e508c7342c44fa70392f722e8de8f2416489f"
   integrity sha512-EF5W+6Wwcu6BqVwpgmyR5U2+L4c1FQzlM/02dkZOugN3KF0cG9bzHZP+TDJglmPm2/IzCEJDT7KBxzayk7SAHw==

@@ -115,10 +115,13 @@ contract Shop {
         uint256 _productId,
         string memory _publicKey
     ) public payable onlyGuild {
-        require(_productId <= productsCount);
-        require(products[_productId].salesCount < products[_productId].stock);
-        require(products[_productId].isAvailable);
-        require(products[_productId].price <= msg.value);
+        require(_productId <= productsCount, "Product does not exist");
+        require(
+            products[_productId].salesCount < products[_productId].stock,
+            "Product is out of stock"
+        );
+        require(products[_productId].isAvailable, "Product is not available");
+        require(products[_productId].price <= msg.value, "Payment is too low");
 
         sales[salesCount] = Sale({
             saleId: salesCount,
@@ -137,8 +140,14 @@ contract Shop {
     }
 
     function getRefund(uint256 _saleId) external payable onlyGuild {
-        require(sales[_saleId].status == SaleStatus.Requested);
-        require(block.timestamp > sales[_saleId].saleDeadline);
+        require(
+            sales[_saleId].status == SaleStatus.Requested,
+            "Sale is not requested"
+        );
+        require(
+            block.timestamp > sales[_saleId].saleDeadline,
+            "Sale deadline hasn't been passed"
+        );
 
         sales[_saleId].status = SaleStatus.Refunded;
         closeSaleIds.push(_saleId);
@@ -160,8 +169,14 @@ contract Shop {
         external
         onlyGuild
     {
-        require(sales[_saleId].status == SaleStatus.Requested);
-        require(sales[_saleId].saleDeadline > block.timestamp);
+        require(
+            sales[_saleId].status == SaleStatus.Requested,
+            "Sale is not requested"
+        );
+        require(
+            sales[_saleId].saleDeadline > block.timestamp,
+            "Sale deadline hasn't been passed"
+        );
 
         sales[_saleId].unlockedLicense = _unlockedLicense;
         sales[_saleId].status = SaleStatus.Completed;
@@ -177,7 +192,10 @@ contract Shop {
     }
 
     function addRating(uint256 _saleId, uint256 _rating) external onlyGuild {
-        require(sales[_saleId].status == SaleStatus.Completed);
+        require(
+            sales[_saleId].status == SaleStatus.Completed,
+            "Sale is not completed"
+        );
         sales[_saleId].rating = _rating;
         sales[_saleId].status = SaleStatus.Rated;
         products[sales[_saleId].productId].ratingsCount++;
@@ -249,5 +267,9 @@ contract Shop {
 
     function getClosedSaleIds() external view returns (uint256[] memory) {
         return closeSaleIds;
+    }
+
+    function getProductCount() external view returns (uint256) {
+        return productsCount;
     }
 }

@@ -59,6 +59,8 @@ interface IShop {
 
     function getSalesCount() external view returns (uint256);
 
+    function getProductCount() external view returns (uint256);
+
     function getSale(uint256 _saleId) external view returns (Sale memory);
 
     function getProduct(uint256 _productId)
@@ -333,7 +335,7 @@ contract Guild {
     }
 
     // getter functions
-    function getSale(uint256 _shopId, uint256 _saleId)
+    function getSaleInfo(uint256 _shopId, uint256 _saleId)
         external
         view
         returns (IShop.Sale memory)
@@ -341,7 +343,7 @@ contract Guild {
         return IShop(shops[_shopId]).getSale(_saleId);
     }
 
-    function getProduct(uint256 _shopId, uint256 _productId)
+    function getProductInfo(uint256 _shopId, uint256 _productId)
         external
         view
         returns (IShop.Product memory)
@@ -373,11 +375,19 @@ contract Guild {
         return IShop(shops[_shopId]).getClosedSaleIds();
     }
 
-    function setServiceTax(uint256 newServiceTax) external onlyOwner {
-        serviceTax = newServiceTax;
+    function setServiceTax(uint256 _newServiceTax) external onlyOwner {
+        serviceTax = _newServiceTax;
     }
 
-    function setRatingReward(uint256 newRatingReward) external onlyOwner {
-        ratingReward = newRatingReward;
+    function setRatingReward(uint256 _newRatingReward) external onlyOwner {
+        ratingReward = _newRatingReward;
+    }
+
+    function getShopCount() external view returns (uint256) {
+        return shops.length;
+    }
+
+    function getProductCount(uint256 _shopId) external view returns (uint256) {
+        return IShop(shops[_shopId]).getProductCount();
     }
 }

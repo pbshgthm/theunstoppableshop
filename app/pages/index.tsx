@@ -53,7 +53,7 @@ const Home: NextPage = () => {
       <br /><br /><br />
       <pre>{JSON.stringify(events, null, 2)}</pre>
     </div>
-  )
+  ) 
 }
 
 export default Home

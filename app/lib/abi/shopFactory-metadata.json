@@ -1,0 +1,121 @@
+{
+	"compiler": {
+		"version": "0.8.7+commit.e28d00a7"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_guild",
+						"type": "address"
+					}
+				],
+				"name": "addMemberGuild",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_shopOwner",
+						"type": "address"
+					},
+					{
+						"internalType": "string",
+						"name": "_shopName",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "_detailsCId",
+						"type": "string"
+					}
+				],
+				"name": "createShop",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getLatestShopAddress",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "manager",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/ShopFactory.sol": "ShopFactory"
+		},
+		"evmVersion": "london",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/Shop.sol": {
+			"keccak256": "0x5da2e16762db07832a1322708c28204d19a21d9ed20c33d2b0d6b23f6e8b2615",
+			"license": "GPL-3.0",
+			"urls": [
+				"bzz-raw://8a6b1bcd3e71491675f933c7c3231224acdee44b2afd185209e6a29ea38af2cc",
+				"dweb:/ipfs/QmV2WradyQ6xhNnAgEntXxXt6iR5ppbpoTryvh9BHaKRmQ"
+			]
+		},
+		"contracts/ShopFactory.sol": {
+			"keccak256": "0xb6c27ce6554531e81abe2d635ae8051d9126fe1838b388a62fa448a2a802e90a",
+			"license": "GPL-3.0",
+			"urls": [
+				"bzz-raw://f405870e367d7b4e95e372a4c24090cb1c5d70e3f186f64a7e7a45dabd4b1f08",
+				"dweb:/ipfs/QmXE3rej1BUdD4BrVKgKamUJwKtb5rvmbqbptKUHCPWFAT"
+			]
+		}
+	},
+	"version": 1
+}
