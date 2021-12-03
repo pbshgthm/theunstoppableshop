@@ -141,10 +141,7 @@ contract Guild {
     // ..close credits periodically
 
     // Events, indexed can be decided based on UI functionality choice
-    event IShopCreated(string indexed shopName, string detailsCId);
-    event RequestedSale(uint256 shopId, uint256 productId, uint256 saleId);
-    event Refunded(uint256 shopId, uint256 saleId);
-    event PriceChanged(uint256 shopId, uint256 productId, uint256 newPrice);
+    event ShopCreated(string indexed shopName, string detailsCId);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call the function!");
@@ -194,7 +191,7 @@ contract Guild {
         shops.push(FactoryInterface.getLatestShopAddress());
         shopNameToShopId[_shopName] = shops.length - 1;
         isShopNameTaken[_shopName] = true;
-        emit IShopCreated(_shopName, _detailsCId);
+        emit ShopCreated(_shopName, _detailsCId);
     }
 
     function addProduct(
@@ -255,8 +252,6 @@ contract Guild {
 
         pendingRequests.push(unlockRequestId);
         requestIdToRequestIndex[unlockRequestId] = pendingRequests.length - 1;
-
-        emit RequestedSale(_shopId, _productId, sale.saleId);
     }
 
     function getRefund(uint256 _shopId, uint256 _saleId)
@@ -268,8 +263,6 @@ contract Guild {
         buyerCredits[msg.sender] += ratingReward;
 
         IShop(shops[_shopId]).getRefund(_saleId);
-
-        emit Refunded(_shopId, _saleId);
     }
 
     function addRating(
@@ -294,7 +287,6 @@ contract Guild {
         uint256 _price
     ) external onlyShopOwner(_shopId) {
         IShop(shops[_shopId]).changePrice(_productId, _price);
-        emit PriceChanged(_shopId, _productId, _price);
     }
 
     function changeStock(

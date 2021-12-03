@@ -68,7 +68,16 @@ contract Shop {
         _;
     }
 
-    event ProductCreated(string shopName, uint256 productId);
+    event ProductCreated(string indexed shopName, uint256 productId);
+    event RequestedSale(
+        string indexed shopName,
+        uint256 productId,
+        uint256 saleId
+    );
+
+    event SaleClosed(string indexed shopName, uint256 productId);
+    event Refunded(string indexed shopId, uint256 saleId);
+    event PriceChanged(uint256 shopId, uint256 productId, uint256 newPrice);
 
     constructor(
         address _owner,
