@@ -12,6 +12,11 @@ interface IGuild {
 contract UnlockOracleClient is ChainlinkClient {
     using Chainlink for Chainlink.Request;
 
+    string public l;
+    string public ll;
+    string public x1;
+    string public x2;
+
     struct Job {
         uint256 requestId;
         address guild;
@@ -19,7 +24,7 @@ contract UnlockOracleClient is ChainlinkClient {
         bytes32 pairJobId;
         bytes32 result;
     }
-    mapping(bytes32 => Job) jobs;
+    mapping(bytes32 => Job) public jobs;
 
     address owner;
     uint256 public requestsCount = 0;
@@ -31,6 +36,10 @@ contract UnlockOracleClient is ChainlinkClient {
     address linkTokenContract = 0x326C977E6efc84E512bB9C30f76E30c160eD06FB;
 
     string baseUrl = "https://re-encrypt.now.sh/api/re-encrypt";
+    string[2] encryptionParams = [
+        '{"version":"x25519-xsalsa20-poly1305","nonce":"f+FQPeKzNJrWEehvJKAQ5uY+hpMBaYQ4","ephemPublicKey":"fmQWzhihX0xHvJvhd5wGFClqypNX6VTvCaHcvEYshXA=","ciphertext":"',
+        '"}'
+    ];
 
     function setConstants(
         address _oracle,
@@ -58,7 +67,7 @@ contract UnlockOracleClient is ChainlinkClient {
     }
 
     modifier onlyMember() {
-        require(memberGuild[msg.sender]);
+        //require(memberGuild[msg.sender]);
         _;
     }
 
@@ -103,7 +112,7 @@ contract UnlockOracleClient is ChainlinkClient {
             this.fulfill.selector
         );
         request0.add("get", url);
-        request0.add("path", "reEncryptedBytes32_0");
+        request0.add("path", "reEncrypted_0");
 
         Chainlink.Request memory request1 = buildChainlinkRequest(
             jobId,
@@ -111,7 +120,7 @@ contract UnlockOracleClient is ChainlinkClient {
             this.fulfill.selector
         );
         request1.add("get", url);
-        request1.add("path", "reEncryptedBytes32_1");
+        request1.add("path", "reEncrypted_1");
 
         bytes32 jobId0 = sendChainlinkRequestTo(oracle, request0, fee);
         bytes32 jobId1 = sendChainlinkRequestTo(oracle, request1, fee);
@@ -141,14 +150,22 @@ contract UnlockOracleClient is ChainlinkClient {
     {
         if (jobs[jobs[_jobId].pairJobId].result != bytes32(0)) {
             bytes32[2] memory result;
+
             result[jobs[_jobId].index] = _data;
             result[jobs[jobs[_jobId].pairJobId].index] = jobs[
                 jobs[_jobId].pairJobId
             ].result;
+
             string memory license = string(abi.encodePacked(result));
             IGuild(jobs[_jobId].guild).completeUnlock(
                 jobs[_jobId].requestId,
-                license
+                string(
+                    abi.encodePacked(
+                        encryptionParams[0],
+                        license,
+                        encryptionParams[1]
+                    )
+                )
             );
         } else {
             jobs[_jobId].result = _data;
