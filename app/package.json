@@ -8,9 +8,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@tiptap/react": "^2.0.0-beta.98",
+    "@tiptap/starter-kit": "^2.0.0-beta.150",
     "crypto-js": "^4.1.1",
-    "ethereum-multicall": "^2.9.0",
     "ethers": "^5.5.1",
+    "ethers-multicall": "^0.2.1",
     "file-saver": "^2.0.5",
     "jszip": "^3.7.1",
     "metamask-react": "^2.1.1",

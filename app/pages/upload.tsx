@@ -8,46 +8,6 @@ import CryptoJS from "crypto-js"
 
 interface File extends Blob {
   name: string,
-  path: string,
-}
-
-
-/*
-function upload(file) {
-
-  const formData = new FormData()
-  formData.append("data", file)
-
-  // NOTE
-  // This example uses XMLHttpRequest() instead of fetch
-  // because we want to show progress. But you can use
-  // fetch in this example if you like.
-  const xhr = new XMLHttpRequest()
-
-  xhr.upload.onprogress = (event) => {
-    this.setState({
-      loaded: event.loaded,
-      total: event.total
-    })
-  }
-
-  xhr.open(
-    "POST",
-    "https://api.estuary.tech/content/add"
-  )
-  xhr.setRequestHeader(
-    "Authorization",
-    "Bearer EST98d089e8-9712-4450-abc4-d23fd28a6cbfARY"
-  )
-  xhr.send(formData)
-}
-*/
-
-function blobToFile(blob: Blob, fileName: string): File {
-  var file: any = blob
-  file.lastModifiedDate = new Date()
-  file.name = fileName
-  return file as File
 }
 
 async function sendToEstuary(data: Blob) {
@@ -58,6 +18,7 @@ async function sendToEstuary(data: Blob) {
     method: "POST",
     headers: {
       Authorization: 'Bearer EST98d089e8-9712-4450-abc4-d23fd28a6cbfARY',
+      //NEED TO REVOKE AFTER TESTING
     },
     body: formData
   })
@@ -151,8 +112,6 @@ function LockFile() {
     }
   }
 
-  console.log(cid)
-
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop })
 
   return (
@@ -180,7 +139,7 @@ function LockFile() {
       </div>
       <div>-------------</div>
       <div className="mt-3 text-gray-700 flex flex-col gap-1">
-        {files.map((file: File) => (<div key={file.name}>{file.path}</div>))}
+        {files.map((file: File) => (<div key={file.name}>{file.name}</div>))}
       </div>
     </div>
   )
@@ -252,7 +211,7 @@ function UnLockFile() {
       </div>
       <div>-------------</div>
       <div className="mt-3 text-gray-700 flex flex-col gap-1">
-        {file?.path}
+        {file?.name}
       </div>
     </div>
   )
