@@ -42,8 +42,9 @@ const Home: NextPage = () => {
   }
 
   function lockLicense() {
-    const encStr = encryptStr(license, apiEncryptionKey)
-    setSellerLockedLicense(Buffer.from(encStr).toString())
+    const encStr = encryptStr(license.toString(), apiEncryptionKey)
+    console.log(encStr, 'encStr')
+    setSellerLockedLicense(encStr)
   }
 
   function getLicense() {
@@ -59,16 +60,15 @@ const Home: NextPage = () => {
 
   function approveLicense() {
     const params = {
-      sourceEncryptedText: Buffer.from(contractLockedLicense).toString('base64'),
-      targetPublicKey: Buffer.from(contractBuyerKey).toString('base64'),
+      encryptedText: contractLockedLicense,
+      publicKey: contractBuyerKey,
     }
-
-    const queryParams = new URLSearchParams(params).toString()
-    console.log('queryParams', queryParams)
-    fetch(`/api/byte32?${queryParams}`)
+    console.log(contractLockedLicense, contractBuyerKey)
+    const queryParams = new URLSearchParams(params).toString().replace(/%3D/g, '=')
+    fetch(`/api/re-encrypt?${queryParams}`)
       .then(res => res.json())
       .then(res => {
-        setApprovedLicense(res.targetCipherText)
+        setApprovedLicense(res.reEncryptedText)
       })
   }
 
