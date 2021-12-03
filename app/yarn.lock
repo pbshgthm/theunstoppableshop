@@ -1331,7 +1331,7 @@ crypto-browserify@3.12.0:
     randombytes "^2.0.0"
     randomfill "^1.0.3"
 
-crypto-js@^4.0.0, crypto-js@^4.1.1:
+crypto-js@^4.1.1:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/crypto-js/-/crypto-js-4.1.1.tgz#9e485bcf03521041bd85844786b83fb7619736cf"
   integrity sha512-o2JlM7ydqd3Qk9CA0L4NL6mTzU2sdx96a+oOfPu8Mkl/PK51vSyoi8/rQ8NknZtk44vq15lmhAj9CIAGwgeWKw==
@@ -3576,13 +3576,6 @@ side-channel@^1.0.4:
     call-bind "^1.0.0"
     get-intrinsic "^1.0.2"
     object-inspect "^1.9.0"
-
-simple-crypto-js@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/simple-crypto-js/-/simple-crypto-js-3.0.0.tgz#31ae53c291f1ca819d2c5f9fcdb2125ea0614713"
-  integrity sha512-5eSn5RTK+05iHFCkeCzhDuZY5Ek/rpws4k7oEpB7e3YxMBnJAEm/sN1FbWn/duiZgnIsDSuyti5pQr9oq12pyg==
-  dependencies:
-    crypto-js "^4.0.0"
 
 simple-swizzle@^0.2.2:
   version "0.2.2"

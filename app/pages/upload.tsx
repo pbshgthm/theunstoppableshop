@@ -11,6 +11,59 @@ interface File extends Blob {
   path: string,
 }
 
+
+/*
+function upload(file) {
+
+  const formData = new FormData()
+  formData.append("data", file)
+
+  // NOTE
+  // This example uses XMLHttpRequest() instead of fetch
+  // because we want to show progress. But you can use
+  // fetch in this example if you like.
+  const xhr = new XMLHttpRequest()
+
+  xhr.upload.onprogress = (event) => {
+    this.setState({
+      loaded: event.loaded,
+      total: event.total
+    })
+  }
+
+  xhr.open(
+    "POST",
+    "https://api.estuary.tech/content/add"
+  )
+  xhr.setRequestHeader(
+    "Authorization",
+    "Bearer EST98d089e8-9712-4450-abc4-d23fd28a6cbfARY"
+  )
+  xhr.send(formData)
+}
+*/
+
+function blobToFile(blob: Blob, fileName: string): File {
+  var file: any = blob
+  file.lastModifiedDate = new Date()
+  file.name = fileName
+  return file as File
+}
+
+async function sendToEstuary(data: Blob) {
+  const formData = new FormData()
+  formData.append("data", data, "stuff.enc")
+
+  const request = await fetch('https://shuttle-4.estuary.tech/content/add', {
+    method: "POST",
+    headers: {
+      Authorization: 'Bearer EST98d089e8-9712-4450-abc4-d23fd28a6cbfARY',
+    },
+    body: formData
+  })
+  return await request.json()
+}
+
 function generateKey() {
   return CryptoJS.lib.WordArray.random(24).toString(CryptoJS.enc.Base64)
 }
@@ -76,10 +129,12 @@ function LockFile() {
   const [files, setFiles] = useState<File[]>([])
   const [fileSize, setFileSize] = useState<number>(0)
   const [license, setLicense] = useState<string>("")
+  const [cid, setCid] = useState<string>("")
 
   const onDrop = useCallback(newFiles => {
     setFiles(onlyUniqueObjects([...files, ...newFiles], 'name'))
     let byteSize = 0
+    console.log(newFiles)
     newFiles.forEach((file: File) => { byteSize += file.size })
     setFileSize(byteSize)
   }, [files])
@@ -89,17 +144,29 @@ function LockFile() {
     const zipped = await zipFiles(files, folderName)
     if (zipped) {
       const { data: encrypted, key } = await encryptFile(zipped)
-      saveAs(encrypted, `${folderName}.enc`)
+      //saveAs(encrypted, `${folderName}.enc`)
       setLicense(key)
+      const response = await sendToEstuary(encrypted)
+      setCid(response.cid)
     }
   }
+
+  console.log(cid)
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop })
 
   return (
     <div className="mt-5">
       <div className="text-gray-600 mb-8">Seller</div>
-      <div {...getRootProps()} className="w-96 h-24 bg-gray-100 p-5 rounded text-gray-500">
+      <div>
+        <div className="text-xs text-gray-400">LICENSE</div>
+        <input type="text" className="py-2 px-4 bg-gray-100 text-sm focus:outline-none my-2 rounded w-full" value={license} disabled></input>
+      </div>
+      <div>
+        <div className="text-xs text-gray-400">CID</div>
+        <input type="text" className="py-2 px-4 bg-gray-100 text-sm focus:outline-none my-2 rounded w-full" value={cid} disabled></input>
+      </div>
+      <div {...getRootProps()} className="mt-12 w-96 h-24 bg-gray-100 p-5 rounded text-gray-500">
         <input {...getInputProps()} />
         {
           isDragActive ?
@@ -107,13 +174,10 @@ function LockFile() {
             <p>Drag n drop some files here, or click to select files</p>
         }
       </div>
-      <div className="mt-3 text-gray-700">
+      <div className="my-5 text-gray-700">
+        <button onClick={lockFile} className="p-2 bg-blue-100 rounded mr-4">Upload</button>
         {Math.round(fileSize / 1024)} kb
       </div>
-      <div>
-        <input type="text" className="py-2 px-4 bg-gray-100 text-sm focus:outline-none my-2 rounded w-full" value={license} disabled></input>
-      </div>
-      <button onClick={lockFile}>Download</button>
       <div>-------------</div>
       <div className="mt-3 text-gray-700 flex flex-col gap-1">
         {files.map((file: File) => (<div key={file.name}>{file.path}</div>))}
@@ -122,11 +186,17 @@ function LockFile() {
   )
 }
 
+
+function getFromIPFS(cid: string) {
+  return fetch(`https://cloudflare-ipfs.com/ipfs/${cid}`)
+}
+
 function UnLockFile() {
 
   const [file, setFile] = useState<File>()
   const [fileSize, setFileSize] = useState<number>(0)
   const [license, setLicense] = useState<string>()
+  const [cid, setCID] = useState<string>()
 
   const onDrop = useCallback(newFiles => {
     setFile(newFiles[0])
@@ -135,11 +205,18 @@ function UnLockFile() {
   }, [file])
 
   async function unLockFile() {
+    /*
     const folderName = 'stuff'
     if (file && license) {
       const blob = new Blob([file as any])
       const decrypted = await decryptFile(blob, license)
       saveAs(decrypted, `${folderName}.zip`)
+    }
+    */
+    if (license && cid) {
+      const response = await getFromIPFS(cid)
+      const decrypted = await decryptFile(await response.blob(), license)
+      saveAs(decrypted, `stuff.zip`)
     }
   }
 
@@ -147,7 +224,8 @@ function UnLockFile() {
 
   return (
     <div className="mt-5">
-      <div className="text-gray-600 mb-8">Buyer</div>
+      <div className="text-gray-600 mb-8 w-96">Buyer</div>
+      {/*
       <div {...getRootProps()} className="w-96 h-24 bg-gray-100 p-5 rounded text-gray-500">
         <input {...getInputProps()} />
         {
@@ -159,10 +237,19 @@ function UnLockFile() {
       <div className="mt-3 text-gray-700">
         {Math.round(fileSize / 1024)} kb
       </div>
+      */}
+
       <div>
+        <div className="text-xs text-gray-400">LICENSE</div>
         <input type="text" className="py-2 px-4 bg-gray-100 text-sm focus:outline-none my-2 rounded w-full" onChange={(e) => setLicense(e.target.value)}></input>
       </div>
-      <button onClick={unLockFile}>Download</button>
+      <div>
+        <div className="text-xs text-gray-400">CID</div>
+        <input type="text" className="py-2 px-4 bg-gray-100 text-sm focus:outline-none my-2 rounded w-full" onChange={(e) => setCID(e.target.value)}></input>
+      </div>
+      <div className="my-5 text-gray-700">
+        <button onClick={unLockFile} className="p-2 bg-blue-100 rounded mr-4">Download</button>
+      </div>
       <div>-------------</div>
       <div className="mt-3 text-gray-700 flex flex-col gap-1">
         {file?.path}
