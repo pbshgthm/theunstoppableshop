@@ -57,11 +57,8 @@ export function sendLink(
 export async function sendEther(
   ethereum: ethers.providers.ExternalProvider | ethers.providers.JsonRpcFetchFunc) {
   const signer = new ethers.providers.Web3Provider(ethereum).getSigner()
-  console.log('signer', signer)
   const Payable = new ethers.Contract(payableAddress, payableABI, signer)
-  console.log(Payable, 'Payable')
   const tx = Payable.deposit(
     { value: ethers.utils.parseEther("0.000001") }
   )
-  console.log('tx', tx)
 }
