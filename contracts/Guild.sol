@@ -218,7 +218,7 @@ contract Guild {
         uint256 _productId,
         string memory _publicKey,
         uint256 _redeemCredits
-    ) external payable {
+    ) public payable {
         //require(msg.sender != IShop(shops[_shopId]).getOwner());
 
         require(
@@ -327,6 +327,24 @@ contract Guild {
         pendingRequests.pop();
         delete requestIdToRequestIndex[_requestId];
         delete unlockRequests[_requestId];
+    }
+
+    function purchaseCart(
+        uint256[][] memory _cart,
+        string memory _encryptionKey,
+        uint256 _totalAmount
+    ) external payable {
+        require(msg.value == _totalAmount, "Wrong amount");
+        for (uint256 i = 0; i < _cart.length; i++) {
+            // get the info
+
+            this.requestSale{value: _cart[i][3]}(
+                _cart[i][0], //shopId
+                _cart[i][1], //productId
+                _encryptionKey,
+                _cart[i][2] // redeemCredits
+            );
+        }
     }
 
     // getter functions

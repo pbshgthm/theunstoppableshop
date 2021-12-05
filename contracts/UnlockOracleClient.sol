@@ -67,7 +67,7 @@ contract UnlockOracleClient is ChainlinkClient {
     }
 
     modifier onlyMember() {
-        //require(memberGuild[msg.sender]);
+        //require(memberGuild[msg.sender],"Only member can call this function");
         _;
     }
 
