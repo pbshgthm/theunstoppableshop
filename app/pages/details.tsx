@@ -121,6 +121,7 @@ function Render() {
 
 
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img src={`data:image/png;base64,${img}`} className="w-full h-auto" alt="" />
     )
   }
