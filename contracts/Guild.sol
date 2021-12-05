@@ -74,6 +74,9 @@ interface IShop {
 
     function getClosedSaleIds() external view returns (uint256[] memory);
 
+    function addBeneficiary(address _beneficiary, uint256 _sharePercent)
+        external;
+
     function addProduct(
         string memory _contentCId,
         string memory _detailsCId,

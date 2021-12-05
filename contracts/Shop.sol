@@ -25,7 +25,7 @@ contract Shop {
         uint256 amount;
         uint256 saleDeadline;
         string unlockedLicense;
-        uint256 rating;
+        uint8 rating; // struct packing
         SaleStatus status;
     }
 
@@ -48,20 +48,24 @@ contract Shop {
 
     address public guild;
     address public owner;
-    uint256 public shopBalance;
+    address[] public beneficiaries;
+
     string public detailsCId;
     string public shopName;
 
     uint256 public productsCount = 0;
     uint256 public salesCount = 0;
+    uint256 public shopBalance;
+    uint256 public ownerSharePercent;
+
+    uint256[] public openSaleIds;
+    uint256[] public closeSaleIds;
 
     Product[] public products;
 
     mapping(uint256 => Sale) public sales;
-    uint256[] public openSaleIds;
-    uint256[] public closeSaleIds;
-
-    mapping(uint256 => uint256) openSaleIdToIndex;
+    mapping(uint256 => uint256) public openSaleIdToIndex;
+    mapping(address => uint256[2]) public beneficiaryInfo;
 
     modifier onlyGuild() {
         require(msg.sender == guild, "Only guild can call this function");
@@ -89,6 +93,29 @@ contract Shop {
         owner = _owner;
         detailsCId = _detailsCId;
         shopName = _shopName;
+        ownerSharePercent = 100;
+    }
+
+    // function to add beneficiary
+    function addBeneficiary(address _beneficiary, uint256 _sharePercent)
+        external
+        onlyGuild
+    {
+        require(_beneficiary != address(0), "beneficiary cannot be 0");
+        require(_beneficiary != owner, "beneficiary cannot be owner");
+        require(_sharePercent > 0, "beneficiary share must be greater than 0");
+        require(
+            beneficiaryInfo[_beneficiary][0] == 0,
+            "beneficiary already exists"
+        );
+        require(
+            _sharePercent <= ownerSharePercent,
+            "beneficiary share must be less than or equal to owner share"
+        );
+
+        ownerSharePercent -= _sharePercent;
+        beneficiaries.push(_beneficiary);
+        beneficiaryInfo[_beneficiary] = [_sharePercent, 0];
     }
 
     function addProduct(
@@ -200,7 +227,7 @@ contract Shop {
         delete openSaleIdToIndex[_saleId];
     }
 
-    function addRating(uint256 _saleId, uint256 _rating) external onlyGuild {
+    function addRating(uint256 _saleId, uint8 _rating) external onlyGuild {
         require(
             sales[_saleId].status == SaleStatus.Completed,
             "Sale is not completed"

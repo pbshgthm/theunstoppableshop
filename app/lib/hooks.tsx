@@ -19,6 +19,7 @@ const rpcApi =
 const chainLinkAddress = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
 const payableAddress = "0x32dac56F7bd946291b4f23852763d739e34923C6";
 
+// This is not the address of the current contracts.
 const oracleAddress = "0xD082880C27c82F09123338a05F5955d5137F68A2";
 const shopFactoryAddress = "0x18520210dd794B2fB658930e2891D5Ec473AE619";
 const guildAddress = "0x62eE751d500e7cd4eCdb8d9fF8965B3320449D8d";
