@@ -221,7 +221,10 @@ contract Guild {
     ) external payable {
         //require(msg.sender != IShop(shops[_shopId]).getOwner());
 
-        require(buyerCredits[msg.sender] >= _redeemCredits);
+        require(
+            buyerCredits[msg.sender] >= _redeemCredits,
+            "Not enough credits"
+        );
         buyerCredits[msg.sender] -= _redeemCredits;
 
         IShop(shops[_shopId]).requestSale{

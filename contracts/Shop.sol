@@ -230,7 +230,7 @@ contract Shop {
     }
 
     function withdraw(uint256 _amount) external payable onlyGuild {
-        require(shopBalance > _amount);
+        require(shopBalance > _amount, "Not enough funds");
         shopBalance -= _amount;
         (bool sent, ) = owner.call{value: _amount}("");
         require(sent, "Error on withdraw");
