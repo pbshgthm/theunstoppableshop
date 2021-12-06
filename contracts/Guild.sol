@@ -74,8 +74,10 @@ interface IShop {
 
     function getClosedSaleIds() external view returns (uint256[] memory);
 
-    function addBeneficiary(address _beneficiary, uint256 _sharePercent)
-        external;
+    function setBeneficiary(
+        address[] memory _beneficiaryList,
+        uint256[] memory _sharePercent
+    ) external;
 
     function addProduct(
         string memory _contentCId,
@@ -129,21 +131,20 @@ contract Guild {
     uint256 ratingReward = 0.001 ether;
     uint256 serviceTax = 0.2 ether;
     uint256 constant MAX_UINT = 2**256 - 1;
+    uint256[] pendingRequests;
+
     IShopFactory FactoryInterface;
 
     mapping(uint256 => UnlockRequest) unlockRequests;
-    uint256[] pendingRequests;
     mapping(uint256 => uint256) public requestIdToRequestIndex;
-
-    // get shopId before making any function calls
     mapping(string => uint256) public shopNameToShopId;
     mapping(string => bool) public isShopNameTaken;
-
-    mapping(address => uint256) buyerCredits;
+    mapping(address => uint256) public buyerCredits;
+    mapping(address => string) public buyerEncryptionKeys;
+    mapping(address => uint256) public beneficiaryBalances;
     // list of buyers with credits..
     // ..close credits periodically
 
-    // Events, indexed can be decided based on UI functionality choice
     event ShopCreated(string indexed shopName, string detailsCId);
 
     modifier onlyOwner() {
@@ -339,8 +340,6 @@ contract Guild {
     ) external payable {
         require(msg.value == _totalAmount, "Wrong amount");
         for (uint256 i = 0; i < _cart.length; i++) {
-            // get the info
-
             this.requestSale{value: _cart[i][3]}(
                 _cart[i][0], //shopId
                 _cart[i][1], //productId
@@ -348,6 +347,18 @@ contract Guild {
                 _cart[i][2] // redeemCredits
             );
         }
+    }
+
+    function setBeneficiaries(
+        uint256 _shopId,
+        address[] memory _beneficiaryList,
+        uint256[] memory _sharePercent
+    ) external onlyShopOwner(_shopId) {
+        require(
+            _beneficiaryList.length == _sharePercent.length,
+            "Beneficiaries and sharePercent must have the same length"
+        );
+        IShop(shops[_shopId]).setBeneficiary(_beneficiaryList, _sharePercent);
     }
 
     // getter functions
