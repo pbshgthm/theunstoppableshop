@@ -8,12 +8,6 @@ import { output as guildABI } from "./abi/guild-metadata.json";
 import { output as shopFactoryABI } from "./abi/shopFactory-metadata.json";
 import { output as oracleABI } from "./abi/oracle-metadata.json";
 
-import {
-  Multicall,
-  ContractCallResults,
-  ContractCallContext,
-} from "ethereum-multicall";
-
 const rpcApi =
   "https://polygon-mumbai.g.alchemy.com/v2/9rE76R64EAB61z4CE3BTnMwza-7R4HiV";
 const chainLinkAddress = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
