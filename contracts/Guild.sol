@@ -6,7 +6,9 @@ interface IShopFactory {
     function createShop(
         address owner,
         string memory _shopName,
-        string memory _detailsCId
+        string memory _detailsCId,
+        address[] memory _beneficiaryList,
+        uint256[] memory _sharePercent
     ) external;
 
     function getLatestShopAddress() external view returns (address);
@@ -74,11 +76,6 @@ interface IShop {
 
     function getClosedSaleIds() external view returns (uint256[] memory);
 
-    function setBeneficiary(
-        address[] memory _beneficiaryList,
-        uint256[] memory _sharePercent
-    ) external;
-
     function addProduct(
         string memory _contentCId,
         string memory _detailsCId,
@@ -142,10 +139,6 @@ contract Guild {
     mapping(address => uint256) public buyerCredits;
     mapping(address => string) public buyerEncryptionKeys;
     mapping(address => uint256) public beneficiaryBalances;
-    // list of buyers with credits..
-    // ..close credits periodically
-
-    event ShopCreated(string indexed shopName, string detailsCId);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call the function!");
@@ -185,17 +178,25 @@ contract Guild {
         oracleClient = _oracle;
     }
 
-    function createShop(string memory _shopName, string memory _detailsCId)
-        external
-    {
+    function createShop(
+        string memory _shopName,
+        string memory _detailsCId,
+        address[] memory _beneficiaryList,
+        uint256[] memory _sharePercent
+    ) external {
         require(!isShopNameTaken[_shopName], "Shop name already taken");
 
-        FactoryInterface.createShop(msg.sender, _shopName, _detailsCId);
+        FactoryInterface.createShop(
+            msg.sender,
+            _shopName,
+            _detailsCId,
+            _beneficiaryList,
+            _sharePercent
+        );
 
         shops.push(FactoryInterface.getLatestShopAddress());
         shopNameToShopId[_shopName] = shops.length - 1;
         isShopNameTaken[_shopName] = true;
-        emit ShopCreated(_shopName, _detailsCId);
     }
 
     function addProduct(
@@ -266,7 +267,6 @@ contract Guild {
         payable
         onlyBuyer(_shopId, _saleId)
     {
-        // increment buyerCredit of the buyer with the rating reward
         buyerCredits[msg.sender] += ratingReward;
 
         IShop(shops[_shopId]).getRefund(_saleId);
@@ -347,18 +347,6 @@ contract Guild {
                 _cart[i][2] // redeemCredits
             );
         }
-    }
-
-    function setBeneficiaries(
-        uint256 _shopId,
-        address[] memory _beneficiaryList,
-        uint256[] memory _sharePercent
-    ) external onlyShopOwner(_shopId) {
-        require(
-            _beneficiaryList.length == _sharePercent.length,
-            "Beneficiaries and sharePercent must have the same length"
-        );
-        IShop(shops[_shopId]).setBeneficiary(_beneficiaryList, _sharePercent);
     }
 
     // getter functions

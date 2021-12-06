@@ -73,28 +73,20 @@ contract Shop {
         _;
     }
 
-    event ProductCreated(string indexed shopName, uint256 productId);
-    event RequestedSale(
-        string indexed shopName,
-        uint256 productId,
-        uint256 saleId
-    );
-
-    event SaleClosed(string indexed shopName, uint256 productId);
-    event Refunded(string indexed shopId, uint256 saleId);
-    event PriceChanged(uint256 shopId, uint256 productId, uint256 newPrice);
-
     constructor(
         address _owner,
         address _guild,
         string memory _shopName,
-        string memory _detailsCId
+        string memory _detailsCId,
+        address[] memory _beneficiaryList,
+        uint256[] memory _sharePercent
     ) {
         guild = _guild;
         owner = _owner;
         detailsCId = _detailsCId;
         shopName = _shopName;
         ownerSharePercent = 100;
+        setBeneficiary(_beneficiaryList, _sharePercent);
     }
 
     function addProduct(
@@ -121,8 +113,6 @@ contract Shop {
             })
         );
         productsCount++;
-
-        emit ProductCreated(shopName, productsCount - 1);
     }
 
     function requestSale(
@@ -249,7 +239,7 @@ contract Shop {
     function setBeneficiary(
         address[] memory _beneficiaryList,
         uint256[] memory _sharePercent
-    ) external onlyGuild {
+    ) internal {
         // deleting current share percent values
         for (uint256 i = 0; i < _beneficiaryList.length; i++) {
             delete beneficiarySharePercent[_beneficiaryList[i]];
