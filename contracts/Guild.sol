@@ -76,8 +76,6 @@ interface IShop {
 
     function getOpenSaleIds() external view returns (uint256[] memory);
 
-    function getClosedSaleIds() external view returns (uint256[] memory);
-
     function addProduct(
         string memory _contentCId,
         string memory _detailsCId,
@@ -401,14 +399,6 @@ contract Guild {
         returns (uint256[] memory)
     {
         return IShop(shops[_shopId]).getOpenSaleIds();
-    }
-
-    function getClosedSaleIds(uint256 _shopId)
-        external
-        view
-        returns (uint256[] memory)
-    {
-        return IShop(shops[_shopId]).getClosedSaleIds();
     }
 
     function setServiceTax(uint256 _newServiceTax) external onlyOwner {

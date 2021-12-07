@@ -61,7 +61,6 @@ contract Shop {
     uint256 public ownerSharePercent;
 
     uint256[] public openSaleIds;
-    uint256[] public closeSaleIds;
 
     Product[] public products;
 
@@ -159,7 +158,7 @@ contract Shop {
         );
 
         sales[_saleId].status = SaleStatus.Refunded;
-        closeSaleIds.push(_saleId);
+
         openSaleIds[openSaleIdToIndex[_saleId]] = openSaleIds[
             openSaleIds.length - 1
         ];
@@ -193,7 +192,6 @@ contract Shop {
         products[sales[_saleId].productId].purchaseTime = block.timestamp;
 
         allocateAmount(sales[_saleId].amount);
-        closeSaleIds.push(_saleId);
 
         openSaleIds[openSaleIdToIndex[_saleId]] = openSaleIds[
             openSaleIds.length - 1
@@ -323,10 +321,6 @@ contract Shop {
 
     function getOpenSaleIds() external view returns (uint256[] memory) {
         return openSaleIds;
-    }
-
-    function getClosedSaleIds() external view returns (uint256[] memory) {
-        return closeSaleIds;
     }
 
     function getProductCount() external view returns (uint256) {
