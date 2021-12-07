@@ -84,6 +84,18 @@ contract Shop {
         setBeneficiary(_beneficiaryList, _sharePercent);
     }
 
+    function updateShopMetadata(string memory _detailsCId) external onlyGuild {
+        detailsCId.push(_detailsCId);
+    }
+
+    function updateProductMetadata(uint256 _productId, string memory _metadata)
+        external
+        onlyGuild
+    {
+        require(_productId < productsCount, "Product id is out of range");
+        products[_productId].metadata.push(_metadata);
+    }
+
     function addProduct(
         string[] memory _metadata,
         string memory _lockedLicense,

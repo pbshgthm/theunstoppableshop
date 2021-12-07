@@ -64,6 +64,11 @@ interface IShop {
 
     function getSale(uint256 _saleId) external view returns (Sale memory);
 
+    function updateShopMetadata(string memory _detailsCId) external;
+
+    function updateProductMetadata(uint256 _productId, string memory _metadata)
+        external;
+
     function getProduct(uint256 _productId)
         external
         view
@@ -183,6 +188,21 @@ contract Guild {
 
     function changeOracle(address _oracle) external onlyOwner {
         oracleClient = _oracle;
+    }
+
+    function updateShopMetadata(uint256 _shopId, string memory _metadata)
+        external
+        onlyShopOwner(_shopId)
+    {
+        IShop(shops[_shopId]).updateShopMetadata(_metadata);
+    }
+
+    function updateProductMetadata(
+        uint256 _shopId,
+        uint256 _productId,
+        string memory _metadata
+    ) external onlyShopOwner(_shopId) {
+        IShop(shops[_shopId]).updateProductMetadata(_productId, _metadata);
     }
 
     function createShop(
