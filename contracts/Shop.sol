@@ -237,7 +237,6 @@ contract Shop {
         ]++;
     }
 
-    // function to set beneficiary
     function validateBeneficiary(Beneficiary[] memory _beneficiaries)
         internal
         pure
