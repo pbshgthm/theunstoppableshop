@@ -228,26 +228,3 @@ async function multicallSaleInfo(shopId: number, closedSaleIds: number[]) {
   const closedSaleInfos = await call();
   return closedSaleInfos;
 }
-
-export async function tempProductSale(shopId = 0, productId = 0) {
-  const guild = new ethers.Contract(guildAddress, guildABI.abi, provider);
-  const closedSaleIds = await guild.getClosedSaleIds(shopId);
-
-  const closedSalesInfoRaw = await multicallSaleInfo(shopId, closedSaleIds);
-
-  const productSaleInfos = closedSalesInfoRaw
-    .filter((saleInfoRaw) => parseInt(saleInfoRaw[3]) === productId)
-    .map((productSaleRaw) => ({
-      saleId: parseInt(productSaleRaw[0]),
-      buyer: productSaleRaw[1],
-      publicKey: productSaleRaw[2],
-      productId: parseInt(productSaleRaw[3]),
-      amount: parseInt(productSaleRaw[4]),
-      saleDeadline: parseInt(productSaleRaw[5]),
-      unlockedLicense: productSaleRaw[6],
-      rating: parseInt(productSaleRaw[7]),
-      status: productSaleRaw[8],
-    }));
-
-  return productSaleInfos;
-}

@@ -145,6 +145,7 @@ contract Guild {
     event RequestedSale(
         uint256 indexed shopId,
         address indexed buyer,
+        uint256 indexed productId,
         uint256 saleId
     );
 
@@ -278,7 +279,7 @@ contract Guild {
         pendingRequests.push(unlockRequestId);
         requestIdToRequestIndex[unlockRequestId] = pendingRequests.length - 1;
 
-        emit RequestedSale(_shopId, msg.sender, sale.saleId);
+        emit RequestedSale(_shopId, msg.sender, sale.productId, sale.saleId);
     }
 
     function getRefund(uint256 _shopId, uint256 _saleId)
