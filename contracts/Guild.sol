@@ -149,7 +149,7 @@ contract Guild {
     mapping(string => uint256) public shopNameToShopId;
     mapping(string => bool) public isShopNameTaken;
     mapping(address => uint256) public buyerCredits;
-    mapping(address => string) public buyerEncryptionKeys;
+    mapping(address => string) public buyerPublicKeys;
     mapping(address => uint256) public beneficiaryBalances;
 
     //Events
@@ -278,10 +278,10 @@ contract Guild {
 
         if (bytes(_publicKey).length == 0) {
             require(
-                bytes(buyerEncryptionKeys[msg.sender]).length != 0,
-                "No encryption key found for this user"
+                bytes(buyerPublicKeys[msg.sender]).length != 0,
+                "No public key found for this user"
             );
-            _publicKey = buyerEncryptionKeys[msg.sender];
+            _publicKey = buyerPublicKeys[msg.sender];
         }
 
         IShop(shops[_shopId]).requestSale{
@@ -368,7 +368,7 @@ contract Guild {
 
     function checkoutCart(
         CartItem[] memory _cartItems,
-        string memory _encryptionKey,
+        string memory _publicKey,
         uint256 _redeemCredits
     ) external payable {
         uint256 avaiableAmount = msg.value;
@@ -385,7 +385,7 @@ contract Guild {
             requestSale(
                 _cartItems[i].shopId,
                 _cartItems[i].productId,
-                _encryptionKey,
+                _publicKey,
                 _cartItems[i].amount
             );
         }
