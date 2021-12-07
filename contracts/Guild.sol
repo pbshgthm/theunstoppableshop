@@ -6,47 +6,31 @@ interface IShopFactory {
     function createShop(
         address owner,
         string memory _shopName,
-        string memory _detailsCId
+        string memory _detailsCId,
+        address[] memory _beneficiaryList,
+        uint256[] memory _sharePercent
     ) external;
 
     function getLatestShopAddress() external view returns (address);
 }
 
 interface IShop {
-    struct Product {
-        uint256 productId;
-        string contentCId;
-        string detailsCId;
-        string licenseHash;
-        string lockedLicense;
-        uint256 price;
-        uint256 stock;
-        uint256 ratingsCount;
-        uint256 ratingsSum; // [0] = number of ratings, [1] = sum of ratings
-        uint256 salesCount;
-        bool isAvailable;
-    }
-
     struct Sale {
-        uint256 saleId;
         address buyer;
         string publicKey;
         uint256 productId;
         uint256 amount;
         uint256 saleDeadline;
         string unlockedLicense;
-        uint256 rating;
+        RatingOptions rating;
         SaleStatus status;
     }
-
-    struct ShopInfo {
-        address guild;
-        address owner;
-        uint256 shopBalance;
-        string detailsCId;
-        string shopName;
-        uint256 productsCount;
-        uint256 salesCount;
+    enum RatingOptions {
+        Unrated,
+        Poor,
+        Fair,
+        Good,
+        Excellent
     }
     enum SaleStatus {
         Requested,
@@ -54,31 +38,63 @@ interface IShop {
         Completed,
         Rated
     }
+    struct Product {
+        string[] contentCID;
+        string lockedLicense;
+        uint256 price;
+        uint256 stock;
+        uint256 salesCount;
+        uint256 revenue;
+        uint256 creationTime;
+        Ratings ratings;
+        bool isAvailable;
+    }
+    struct Ratings {
+        uint32[4] ratingsCount;
+    }
+
+    struct ShopInfo {
+        address guild;
+        address owner;
+        string detailsCId;
+        uint256 shopBalance;
+        string shopName;
+        uint256 productsCount;
+        uint256 salesCount;
+    }
 
     function getOwner() external view returns (address);
 
-    function getSalesCount() external view returns (uint256);
-
     function getSale(uint256 _saleId) external view returns (Sale memory);
+
+    function getProductsCount() external view returns (uint256);
+
+    function getSalesCount() external view returns (uint256);
 
     function getProduct(uint256 _productId)
         external
         view
         returns (Product memory);
 
-    function getShopInfo() external view returns (ShopInfo memory);
+    function updateShopDetails(string memory _detailsCId) external;
 
-    function getOpenSaleIds() external view returns (uint256[] memory);
-
-    function getClosedSaleIds() external view returns (uint256[] memory);
+    function getRefund(uint256 _saleId) external payable;
 
     function addProduct(
-        string memory _contentCId,
-        string memory _detailsCId,
-        string memory _licenseHash,
+        string[] memory _contentCID,
         string memory _lockedLicense,
         uint256 _price,
         uint256 _stock
+    ) external;
+
+    function addRating(uint256 _saleId, RatingOptions _rating) external;
+
+    function updateProduct(
+        uint256 _productId,
+        string memory _contentCID,
+        uint256 _price,
+        uint256 _stock,
+        bool _isAvailable
     ) external;
 
     function requestSale(
@@ -87,20 +103,14 @@ interface IShop {
         string memory _publicKey
     ) external payable;
 
-    function getRefund(uint256 _saleId) external payable;
+    function withdrawBalance() external;
 
     function closeSale(uint256 _saleId, string memory _unlockedLicense)
         external;
 
-    function addRating(uint256 _saleId, uint256 _rating) external;
+    function getShopInfo() external view returns (ShopInfo memory);
 
-    function shelfProduct(uint256 _productId) external;
-
-    function changePrice(uint256 _productId, uint256 _price) external;
-
-    function changeStock(uint256 _productId, uint256 _stock) external;
-
-    function withdraw(uint256 _amount) external payable;
+    function getOpenSaleIds() external view returns (uint256[] memory);
 }
 
 interface IUnlockOracleClient {
@@ -117,6 +127,12 @@ contract Guild {
         uint256 saleId;
     }
 
+    struct CartItem {
+        uint256 shopId;
+        uint256 productId;
+        uint256 amount;
+    }
+
     address owner;
     address oracleClient;
     address public shopFactory;
@@ -124,25 +140,29 @@ contract Guild {
     uint256 ratingReward = 0.001 ether;
     uint256 serviceTax = 0.2 ether;
     uint256 constant MAX_UINT = 2**256 - 1;
+    uint256[] pendingRequests;
+
     IShopFactory FactoryInterface;
 
     mapping(uint256 => UnlockRequest) unlockRequests;
-    uint256[] pendingRequests;
     mapping(uint256 => uint256) public requestIdToRequestIndex;
-
-    // get shopId before making any function calls
     mapping(string => uint256) public shopNameToShopId;
     mapping(string => bool) public isShopNameTaken;
+    mapping(address => uint256) public buyerCredits;
+    mapping(address => string) public buyerEncryptionKeys;
+    mapping(address => uint256) public beneficiaryBalances;
 
-    mapping(address => uint256) buyerCredits;
-    // list of buyers with credits..
-    // ..close credits periodically
+    //Events
+    event ProductCreated(uint256 indexed shopId, uint256 productId);
+    event RequestedSale(
+        uint256 indexed shopId,
+        address indexed buyer,
+        uint256 indexed productId,
+        uint8 contentVersion,
+        uint256 saleId
+    );
 
-    // Events, indexed can be decided based on UI functionality choice
-    event IShopCreated(string indexed shopName, string detailsCId);
-    event RequestedSale(uint256 shopId, uint256 productId, uint256 saleId);
-    event Refunded(uint256 shopId, uint256 saleId);
-    event PriceChanged(uint256 shopId, uint256 productId, uint256 newPrice);
+    event ShopCreated(uint256 shopId, address indexed owner); // emitted
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call the function!");
@@ -182,35 +202,69 @@ contract Guild {
         oracleClient = _oracle;
     }
 
-    function createShop(string memory _shopName, string memory _detailsCId)
+    function updateShopDetails(uint256 _shopId, string memory _detailsCId)
         external
+        onlyShopOwner(_shopId)
     {
+        IShop(shops[_shopId]).updateShopDetails(_detailsCId);
+    }
+
+    function updateProduct(
+        uint256 _shopId,
+        uint256 _productId,
+        string memory _contentCID,
+        uint256 _price,
+        uint256 _stock,
+        bool _isAvailable
+    ) external {
+        IShop(shops[_shopId]).updateProduct(
+            _productId,
+            _contentCID,
+            _price,
+            _stock,
+            _isAvailable
+        );
+    }
+
+    function createShop(
+        string memory _shopName,
+        string memory _detailsCId,
+        address[] memory _beneficiaryList,
+        uint256[] memory _sharePercent
+    ) external {
         require(!isShopNameTaken[_shopName], "Shop name already taken");
 
-        FactoryInterface.createShop(msg.sender, _shopName, _detailsCId);
+        FactoryInterface.createShop(
+            msg.sender,
+            _shopName,
+            _detailsCId,
+            _beneficiaryList,
+            _sharePercent
+        );
 
         shops.push(FactoryInterface.getLatestShopAddress());
         shopNameToShopId[_shopName] = shops.length - 1;
         isShopNameTaken[_shopName] = true;
-        emit IShopCreated(_shopName, _detailsCId);
+
+        emit ShopCreated(shopNameToShopId[_shopName], owner);
     }
 
     function addProduct(
         uint256 _shopId,
-        string memory _contentCId,
-        string memory _detailsCId,
-        string memory _licenseHash,
+        string[] memory _contentCID,
         string memory _lockedLicense,
         uint256 _price,
         uint256 _stock
-    ) external onlyShopOwner(_shopId) {
+    ) public onlyShopOwner(_shopId) {
         IShop(shops[_shopId]).addProduct(
-            _contentCId,
-            _detailsCId,
-            _licenseHash,
+            _contentCID,
             _lockedLicense,
             _price,
-            _stock == 0 ? MAX_UINT : _stock // if stock is given, use it else use max uint.
+            _stock
+        );
+        emit ProductCreated(
+            _shopId,
+            IShop(shops[_shopId]).getProductsCount() - 1
         );
     }
 
@@ -218,15 +272,20 @@ contract Guild {
         uint256 _shopId,
         uint256 _productId,
         string memory _publicKey,
-        uint256 _redeemCredits
-    ) external payable {
+        uint256 _amount
+    ) internal {
         //require(msg.sender != IShop(shops[_shopId]).getOwner());
 
-        require(buyerCredits[msg.sender] >= _redeemCredits);
-        buyerCredits[msg.sender] -= _redeemCredits;
+        if (bytes(_publicKey).length == 0) {
+            require(
+                bytes(buyerEncryptionKeys[msg.sender]).length != 0,
+                "No encryption key found for this user"
+            );
+            _publicKey = buyerEncryptionKeys[msg.sender];
+        }
 
         IShop(shops[_shopId]).requestSale{
-            value: msg.value + _redeemCredits - ratingReward - serviceTax
+            value: _amount - ratingReward - serviceTax
         }(msg.sender, _productId, _publicKey);
 
         IShop.Sale memory sale = IShop(shops[_shopId]).getSale(
@@ -248,13 +307,19 @@ contract Guild {
         unlockRequests[unlockRequestId] = UnlockRequest({
             requestId: unlockRequestId,
             shopId: _shopId,
-            saleId: sale.saleId
+            saleId: IShop(shops[_shopId]).getSalesCount() - 1
         });
 
         pendingRequests.push(unlockRequestId);
         requestIdToRequestIndex[unlockRequestId] = pendingRequests.length - 1;
 
-        emit RequestedSale(_shopId, _productId, sale.saleId);
+        emit RequestedSale(
+            _shopId,
+            msg.sender,
+            sale.productId,
+            uint8(product.contentCID.length),
+            IShop(shops[_shopId]).getSalesCount() - 1
+        );
     }
 
     function getRefund(uint256 _shopId, uint256 _saleId)
@@ -262,53 +327,22 @@ contract Guild {
         payable
         onlyBuyer(_shopId, _saleId)
     {
-        // increment buyerCredit of the buyer with the rating reward
         buyerCredits[msg.sender] += ratingReward;
 
         IShop(shops[_shopId]).getRefund(_saleId);
-
-        emit Refunded(_shopId, _saleId);
     }
 
     function addRating(
         uint256 _shopId,
         uint256 _saleId,
-        uint256 _rating
+        IShop.RatingOptions _rating
     ) public onlyBuyer(_shopId, _saleId) {
         IShop(shops[_shopId]).addRating(_saleId, _rating);
         buyerCredits[msg.sender] += ratingReward;
     }
 
-    function shelfProduct(uint256 _shopId, uint256 _productId)
-        external
-        onlyShopOwner(_shopId)
-    {
-        IShop(shops[_shopId]).shelfProduct(_productId);
-    }
-
-    function changePrice(
-        uint256 _shopId,
-        uint256 _productId,
-        uint256 _price
-    ) external onlyShopOwner(_shopId) {
-        IShop(shops[_shopId]).changePrice(_productId, _price);
-        emit PriceChanged(_shopId, _productId, _price);
-    }
-
-    function changeStock(
-        uint256 _shopId,
-        uint256 _productId,
-        uint256 _stock
-    ) external onlyShopOwner(_shopId) {
-        IShop(shops[_shopId]).changeStock(_productId, _stock);
-    }
-
-    function withdrawFromShop(uint256 _shopId, uint256 _amount)
-        external
-        payable
-        onlyShopOwner(_shopId)
-    {
-        IShop(shops[_shopId]).withdraw(_amount);
+    function withdrawBalance(uint256 _shopId) external {
+        IShop(shops[_shopId]).withdrawBalance();
     }
 
     function completeUnlock(uint256 _requestId, string memory _unlockedLicense)
@@ -332,8 +366,33 @@ contract Guild {
         delete unlockRequests[_requestId];
     }
 
+    function checkoutCart(
+        CartItem[] memory _cartItems,
+        string memory _encryptionKey,
+        uint256 _redeemCredits
+    ) external payable {
+        uint256 avaiableAmount = msg.value;
+        require(
+            buyerCredits[msg.sender] >= _redeemCredits,
+            "Not enough credits"
+        );
+        buyerCredits[msg.sender] -= _redeemCredits;
+        avaiableAmount += _redeemCredits;
+
+        for (uint256 i = 0; i < _cartItems.length; i++) {
+            require(avaiableAmount > _cartItems[i].amount, "Not enough funds");
+            avaiableAmount -= _cartItems[i].amount;
+            requestSale(
+                _cartItems[i].shopId,
+                _cartItems[i].productId,
+                _encryptionKey,
+                _cartItems[i].amount
+            );
+        }
+    }
+
     // getter functions
-    function getSale(uint256 _shopId, uint256 _saleId)
+    function getSaleInfo(uint256 _shopId, uint256 _saleId)
         external
         view
         returns (IShop.Sale memory)
@@ -341,7 +400,7 @@ contract Guild {
         return IShop(shops[_shopId]).getSale(_saleId);
     }
 
-    function getProduct(uint256 _shopId, uint256 _productId)
+    function getProductInfo(uint256 _shopId, uint256 _productId)
         external
         view
         returns (IShop.Product memory)
@@ -365,19 +424,19 @@ contract Guild {
         return IShop(shops[_shopId]).getOpenSaleIds();
     }
 
-    function getClosedSaleIds(uint256 _shopId)
-        external
-        view
-        returns (uint256[] memory)
-    {
-        return IShop(shops[_shopId]).getClosedSaleIds();
+    function setServiceTax(uint256 _newServiceTax) external onlyOwner {
+        serviceTax = _newServiceTax;
     }
 
-    function setServiceTax(uint256 newServiceTax) external onlyOwner {
-        serviceTax = newServiceTax;
+    function setRatingReward(uint256 _newRatingReward) external onlyOwner {
+        ratingReward = _newRatingReward;
     }
 
-    function setRatingReward(uint256 newRatingReward) external onlyOwner {
-        ratingReward = newRatingReward;
+    function getShopCount() external view returns (uint256) {
+        return shops.length;
+    }
+
+    function getProductsCount(uint256 _shopId) external view returns (uint256) {
+        return IShop(shops[_shopId]).getProductsCount();
     }
 }

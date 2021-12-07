@@ -3,37 +3,43 @@
 pragma solidity ^0.8.7;
 
 contract Shop {
+    struct Ratings {
+        uint32[4] ratingsCount;
+    }
+
+    struct Beneficiary {
+        address addr;
+        uint8 share;
+    }
+
     struct Product {
-        uint256 productId;
-        string contentCId;
-        string detailsCId;
-        string licenseHash;
+        string[] contentCID;
         string lockedLicense;
         uint256 price;
         uint256 stock;
-        uint256 ratingsCount;
-        uint256 ratingsSum;
         uint256 salesCount;
+        uint256 revenue;
+        uint256 creationTime;
+        Ratings ratings;
         bool isAvailable;
     }
 
     struct Sale {
-        uint256 saleId;
         address buyer;
         string publicKey;
         uint256 productId;
         uint256 amount;
         uint256 saleDeadline;
         string unlockedLicense;
-        uint256 rating;
+        RatingOptions rating;
         SaleStatus status;
     }
 
     struct ShopInfo {
         address guild;
         address owner;
-        uint256 shopBalance;
         string detailsCId;
+        uint256 shopBalance;
         string shopName;
         uint256 productsCount;
         uint256 salesCount;
@@ -46,110 +52,145 @@ contract Shop {
         Rated
     }
 
-    address public guild;
-    address public owner;
-    uint256 public shopBalance;
-    string public detailsCId;
-    string public shopName;
+    enum RatingOptions {
+        Unrated,
+        Poor,
+        Fair,
+        Good,
+        Excellent
+    }
 
-    uint256 public productsCount = 0;
-    uint256 public salesCount = 0;
+    ShopInfo shopInfo;
 
-    Product[] public products;
+    Beneficiary[] beneficiaries;
 
-    mapping(uint256 => Sale) public sales;
-    uint256[] public openSaleIds;
-    uint256[] public closeSaleIds;
+    uint256[] openSaleIds;
 
+    Product[] products;
+
+    mapping(uint256 => Sale) sales;
     mapping(uint256 => uint256) openSaleIdToIndex;
 
     modifier onlyGuild() {
-        require(msg.sender == guild, "Only guild can call this function");
+        require(
+            msg.sender == shopInfo.guild,
+            "Only guild can call this function"
+        );
         _;
     }
-
-    event ProductCreated(string shopName, uint256 productId);
 
     constructor(
         address _owner,
         address _guild,
         string memory _shopName,
-        string memory _detailsCId
+        string memory _detailsCId,
+        Beneficiary[] memory _beneficiaries
     ) {
-        guild = _guild;
-        owner = _owner;
-        detailsCId = _detailsCId;
-        shopName = _shopName;
+        validateBeneficiary(_beneficiaries);
+        shopInfo = ShopInfo({
+            guild: _guild,
+            owner: _owner,
+            detailsCId: _detailsCId,
+            shopBalance: 0,
+            shopName: _shopName,
+            productsCount: 0,
+            salesCount: 0
+        });
+        beneficiaries = _beneficiaries;
+    }
+
+    function updateShopDetails(string memory _detailsCId) external onlyGuild {
+        shopInfo.detailsCId = _detailsCId;
     }
 
     function addProduct(
-        string memory _contentCId,
-        string memory _detailsCId,
-        string memory _licenseHash,
+        string[] memory _contentCID,
         string memory _lockedLicense,
         uint256 _price,
         uint256 _stock
     ) external onlyGuild {
+        require(
+            _contentCID.length == 1,
+            "Product must have exactly one contentCID"
+        );
+        uint32[4] memory ratings;
         products.push(
             Product({
-                productId: productsCount,
-                contentCId: _contentCId,
-                detailsCId: _detailsCId,
-                licenseHash: _licenseHash,
+                contentCID: _contentCID,
                 lockedLicense: _lockedLicense,
                 price: _price,
                 stock: _stock,
                 salesCount: 0,
-                ratingsCount: 0,
-                ratingsSum: 0,
+                revenue: 0,
+                creationTime: block.timestamp,
+                ratings: Ratings(ratings),
                 isAvailable: true
             })
         );
-        productsCount++;
+        shopInfo.productsCount++;
+    }
 
-        emit ProductCreated(shopName, productsCount - 1);
+    function updateProduct(
+        uint256 _productId,
+        string memory _contentCID,
+        uint256 _price,
+        uint256 _stock,
+        bool _isAvailable
+    ) external onlyGuild {
+        products[_productId].contentCID.push(_contentCID);
+        products[_productId].price = _price;
+        products[_productId].stock = _stock;
+        products[_productId].isAvailable = _isAvailable;
     }
 
     function requestSale(
         address _buyer,
         uint256 _productId,
         string memory _publicKey
-    ) public payable onlyGuild {
-        require(_productId <= productsCount);
-        require(products[_productId].salesCount < products[_productId].stock);
-        require(products[_productId].isAvailable);
-        require(products[_productId].price <= msg.value);
+    ) external payable onlyGuild {
+        require(_productId <= shopInfo.productsCount, "Product does not exist");
+        require(
+            products[_productId].salesCount < products[_productId].stock,
+            "Product is out of stock"
+        );
+        require(products[_productId].isAvailable, "Product is not available");
+        require(products[_productId].price <= msg.value, "Payment is too low");
 
-        sales[salesCount] = Sale({
-            saleId: salesCount,
+        sales[shopInfo.salesCount] = Sale({
             buyer: _buyer,
             publicKey: _publicKey,
             productId: _productId,
             amount: msg.value,
-            saleDeadline: block.timestamp + 10000,
+            saleDeadline: block.timestamp + 2 minutes,
             unlockedLicense: "",
-            rating: 0,
+            rating: RatingOptions.Unrated,
             status: SaleStatus.Requested
         });
-        openSaleIds.push(salesCount);
-        openSaleIdToIndex[salesCount] = openSaleIds.length - 1;
-        salesCount++;
+        openSaleIds.push(shopInfo.salesCount);
+        openSaleIdToIndex[shopInfo.salesCount] = openSaleIds.length - 1;
+        shopInfo.salesCount++;
     }
 
     function getRefund(uint256 _saleId) external payable onlyGuild {
-        require(sales[_saleId].status == SaleStatus.Requested);
-        require(block.timestamp > sales[_saleId].saleDeadline);
+        require(
+            sales[_saleId].status == SaleStatus.Requested,
+            "Sale request is fulfilled"
+        );
+        require(
+            block.timestamp > sales[_saleId].saleDeadline,
+            "Sale deadline hasn't yet passed"
+        );
 
         sales[_saleId].status = SaleStatus.Refunded;
-        closeSaleIds.push(_saleId);
+
         openSaleIds[openSaleIdToIndex[_saleId]] = openSaleIds[
             openSaleIds.length - 1
         ];
         openSaleIds.pop();
         delete openSaleIdToIndex[_saleId];
 
-        // decrementing product.SalesCount
         products[sales[_saleId].productId].salesCount--;
+
         (bool sent, ) = sales[_saleId].buyer.call{value: sales[_saleId].amount}(
             ""
         );
@@ -160,14 +201,18 @@ contract Shop {
         external
         onlyGuild
     {
-        require(sales[_saleId].status == SaleStatus.Requested);
-        require(sales[_saleId].saleDeadline > block.timestamp);
+        require(
+            sales[_saleId].status == SaleStatus.Requested,
+            "Sale is already fulfilled"
+        );
+        require(
+            sales[_saleId].saleDeadline > block.timestamp,
+            "Sale deadline has already passed"
+        );
 
         sales[_saleId].unlockedLicense = _unlockedLicense;
         sales[_saleId].status = SaleStatus.Completed;
-
-        shopBalance += sales[_saleId].amount;
-        closeSaleIds.push(_saleId);
+        products[sales[_saleId].productId].revenue += sales[_saleId].amount;
 
         openSaleIds[openSaleIdToIndex[_saleId]] = openSaleIds[
             openSaleIds.length - 1
@@ -176,42 +221,52 @@ contract Shop {
         delete openSaleIdToIndex[_saleId];
     }
 
-    function addRating(uint256 _saleId, uint256 _rating) external onlyGuild {
-        require(sales[_saleId].status == SaleStatus.Completed);
+    function addRating(uint256 _saleId, RatingOptions _rating)
+        external
+        onlyGuild
+    {
+        require(
+            sales[_saleId].status == SaleStatus.Completed,
+            "Sale is not completed or already rated"
+        );
+
         sales[_saleId].rating = _rating;
         sales[_saleId].status = SaleStatus.Rated;
-        products[sales[_saleId].productId].ratingsCount++;
-        products[sales[_saleId].productId].ratingsSum += _rating;
+        products[sales[_saleId].productId].ratings.ratingsCount[
+            uint256(_rating)
+        ]++;
     }
 
-    function shelfProduct(uint256 _productId) external onlyGuild {
-        products[_productId].isAvailable = false;
-    }
-
-    function changePrice(uint256 _productId, uint256 _price)
-        external
-        onlyGuild
+    // function to set beneficiary
+    function validateBeneficiary(Beneficiary[] memory _beneficiaries)
+        internal
+        pure
     {
-        products[_productId].price = _price;
+        uint256 totalShare = 0;
+        for (uint256 i = 0; i < _beneficiaries.length; i++) {
+            require(
+                _beneficiaries[i].share != 0,
+                "beneficiary share cannot be 0"
+            );
+            require(
+                _beneficiaries[i].addr != address(0),
+                "beneficiary cannot be 0"
+            );
+            totalShare += _beneficiaries[i].share;
+        }
+
+        require(totalShare == 100, "Total share must be 100%");
     }
 
-    function changeStock(uint256 _productId, uint256 _stock)
-        external
-        onlyGuild
-    {
-        products[_productId].stock = _stock;
-    }
+    function withdrawBalance() external {
+        uint256 shopBalance = shopInfo.shopBalance;
+        shopInfo.shopBalance = 0;
+        for (uint256 i = 0; i < beneficiaries.length; i++) {
+            uint256 amount = (beneficiaries[i].share * shopBalance) / 100;
 
-    function withdraw(uint256 _amount) external payable onlyGuild {
-        require(shopBalance > _amount);
-        shopBalance -= _amount;
-        (bool sent, ) = owner.call{value: _amount}("");
-        require(sent, "Error on withdraw");
-    }
-
-    // helper functions
-    function getOwner() external view returns (address) {
-        return owner;
+            (bool success, ) = beneficiaries[i].addr.call{value: amount}("");
+            require(success, "Error on withdraw");
+        }
     }
 
     function getSale(uint256 _saleId) external view returns (Sale memory) {
@@ -226,28 +281,23 @@ contract Shop {
         return products[_productId];
     }
 
-    function getSalesCount() external view returns (uint256) {
-        return salesCount;
+    function getShopInfo() external view returns (ShopInfo memory) {
+        return shopInfo;
     }
 
-    function getShopInfo() external view returns (ShopInfo memory) {
-        return
-            ShopInfo({
-                guild: guild,
-                owner: owner,
-                shopBalance: shopBalance,
-                detailsCId: detailsCId,
-                shopName: shopName,
-                productsCount: productsCount,
-                salesCount: salesCount
-            });
+    function getOwner() external view returns (address) {
+        return shopInfo.owner;
+    }
+
+    function getProductsCount() external view returns (uint256) {
+        return shopInfo.productsCount;
+    }
+
+    function getSalesCount() external view returns (uint256) {
+        return shopInfo.salesCount;
     }
 
     function getOpenSaleIds() external view returns (uint256[] memory) {
         return openSaleIds;
-    }
-
-    function getClosedSaleIds() external view returns (uint256[] memory) {
-        return closeSaleIds;
     }
 }
