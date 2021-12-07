@@ -4,6 +4,7 @@ const sigUtil = require('@metamask/eth-sig-util')
 export function decryptStr(encryptedText: string, privateKey: string) {
 
   const encryptedObj = JSON.parse(encryptedText)
+  console.log(encryptedObj, 'encryptedObj')
   const decryptedString = sigUtil.decrypt(
     {
       encryptedData: encryptedObj,
@@ -14,13 +15,13 @@ export function decryptStr(encryptedText: string, privateKey: string) {
 }
 
 export function encryptStr(plainText: string, publicKey: string) {
-
   const encryptedObj = sigUtil.encrypt({
     publicKey: publicKey,
     data: plainText,
     version: 'x25519-xsalsa20-poly1305'
   })
-  const encryptedText = Buffer.from(JSON.stringify(encryptedObj)).toString()
+  console.log(encryptedObj, 'encryptedObj')
+  const encryptedText = JSON.stringify(encryptedObj)
   return encryptedText
 }
 
