@@ -14,6 +14,8 @@ contract Shop {
         uint256 ratingsCount;
         uint256 ratingsSum;
         uint256 salesCount;
+        uint256 totalVolume;
+        uint256 purchaseTime;
         bool isAvailable;
     }
 
@@ -109,6 +111,8 @@ contract Shop {
                 salesCount: 0,
                 ratingsCount: 0,
                 ratingsSum: 0,
+                totalVolume: 0,
+                purchaseTime: 0,
                 isAvailable: true
             })
         );
@@ -185,6 +189,8 @@ contract Shop {
 
         sales[_saleId].unlockedLicense = _unlockedLicense;
         sales[_saleId].status = SaleStatus.Completed;
+        products[sales[_saleId].productId].totalVolume += sales[_saleId].amount;
+        products[sales[_saleId].productId].purchaseTime = block.timestamp;
 
         allocateAmount(sales[_saleId].amount);
         closeSaleIds.push(_saleId);

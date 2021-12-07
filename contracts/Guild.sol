@@ -26,6 +26,8 @@ interface IShop {
         uint256 ratingsCount;
         uint256 ratingsSum; // [0] = number of ratings, [1] = sum of ratings
         uint256 salesCount;
+        uint256 totalVolume;
+        uint256 purchaseTime;
         bool isAvailable;
     }
 
@@ -140,6 +142,16 @@ contract Guild {
     mapping(address => string) public buyerEncryptionKeys;
     mapping(address => uint256) public beneficiaryBalances;
 
+    //Events
+    event ProductCreated(uint256 indexed shopId, uint256 productId);
+    event RequestedSale(
+        uint256 indexed shopId,
+        address indexed buyer,
+        uint256 saleId
+    );
+
+    event ShopCreated(uint256 shopId, address indexed owner); // emitted
+
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call the function!");
         _;
@@ -197,6 +209,8 @@ contract Guild {
         shops.push(FactoryInterface.getLatestShopAddress());
         shopNameToShopId[_shopName] = shops.length - 1;
         isShopNameTaken[_shopName] = true;
+
+        emit ShopCreated(shopNameToShopId[_shopName], owner);
     }
 
     function addProduct(
@@ -215,6 +229,11 @@ contract Guild {
             _lockedLicense,
             _price,
             _stock == 0 ? MAX_UINT : _stock // if stock is given, use it else use max uint.
+        );
+
+        emit ProductCreated(
+            _shopId,
+            IShop(shops[_shopId]).getProductCount() - 1
         );
     }
 
@@ -260,6 +279,8 @@ contract Guild {
 
         pendingRequests.push(unlockRequestId);
         requestIdToRequestIndex[unlockRequestId] = pendingRequests.length - 1;
+
+        emit RequestedSale(_shopId, msg.sender, sale.saleId);
     }
 
     function getRefund(uint256 _shopId, uint256 _saleId)
