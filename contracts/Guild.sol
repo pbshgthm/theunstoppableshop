@@ -15,31 +15,29 @@ interface IShopFactory {
 }
 
 interface IShop {
+    struct Ratings {
+        uint32[4] ratingsCount;
+    }
     struct Product {
-        uint256 productId;
-        string contentCId;
-        string detailsCId;
-        string licenseHash;
+        string[] metadata;
         string lockedLicense;
         uint256 price;
         uint256 stock;
-        uint256 ratingsCount;
-        uint256 ratingsSum; // [0] = number of ratings, [1] = sum of ratings
         uint256 salesCount;
         uint256 totalVolume;
-        uint256 purchaseTime;
+        uint256 creationTime;
+        Ratings ratings;
         bool isAvailable;
     }
 
     struct Sale {
-        uint256 saleId;
         address buyer;
         string publicKey;
         uint256 productId;
         uint256 amount;
         uint256 saleDeadline;
         string unlockedLicense;
-        uint256 rating;
+        uint8 rating; // struct packing
         SaleStatus status;
     }
 
@@ -47,7 +45,6 @@ interface IShop {
         address guild;
         address owner;
         uint256 shopBalance;
-        string detailsCId;
         string shopName;
         uint256 productsCount;
         uint256 salesCount;
@@ -77,9 +74,7 @@ interface IShop {
     function getOpenSaleIds() external view returns (uint256[] memory);
 
     function addProduct(
-        string memory _contentCId,
-        string memory _detailsCId,
-        string memory _licenseHash,
+        string[] memory _metadata,
         string memory _lockedLicense,
         uint256 _price,
         uint256 _stock
@@ -104,7 +99,7 @@ interface IShop {
 
     function changeStock(uint256 _productId, uint256 _stock) external;
 
-    function withdraw(uint256 _amount) external payable;
+    function withdrawBalance() external;
 }
 
 interface IUnlockOracleClient {
@@ -146,6 +141,7 @@ contract Guild {
         uint256 indexed shopId,
         address indexed buyer,
         uint256 indexed productId,
+        uint8 contentVersion,
         uint256 saleId
     );
 
@@ -214,17 +210,13 @@ contract Guild {
 
     function addProduct(
         uint256 _shopId,
-        string memory _contentCId,
-        string memory _detailsCId,
-        string memory _licenseHash,
+        string[] memory _metadata,
         string memory _lockedLicense,
         uint256 _price,
         uint256 _stock
     ) external onlyShopOwner(_shopId) {
         IShop(shops[_shopId]).addProduct(
-            _contentCId,
-            _detailsCId,
-            _licenseHash,
+            _metadata,
             _lockedLicense,
             _price,
             _stock == 0 ? MAX_UINT : _stock // if stock is given, use it else use max uint.
@@ -273,13 +265,19 @@ contract Guild {
         unlockRequests[unlockRequestId] = UnlockRequest({
             requestId: unlockRequestId,
             shopId: _shopId,
-            saleId: sale.saleId
+            saleId: IShop(shops[_shopId]).getSalesCount() - 1
         });
 
         pendingRequests.push(unlockRequestId);
         requestIdToRequestIndex[unlockRequestId] = pendingRequests.length - 1;
 
-        emit RequestedSale(_shopId, msg.sender, sale.productId, sale.saleId);
+        emit RequestedSale(
+            _shopId,
+            msg.sender,
+            sale.productId,
+            uint8(product.metadata.length),
+            IShop(shops[_shopId]).getSalesCount() - 1
+        );
     }
 
     function getRefund(uint256 _shopId, uint256 _saleId)
@@ -324,12 +322,8 @@ contract Guild {
         IShop(shops[_shopId]).changeStock(_productId, _stock);
     }
 
-    function withdrawFromShop(uint256 _shopId, uint256 _amount)
-        external
-        payable
-        onlyShopOwner(_shopId)
-    {
-        IShop(shops[_shopId]).withdraw(_amount);
+    function withdrawBalance(uint256 _shopId) external {
+        IShop(shops[_shopId]).withdrawBalance();
     }
 
     function completeUnlock(uint256 _requestId, string memory _unlockedLicense)

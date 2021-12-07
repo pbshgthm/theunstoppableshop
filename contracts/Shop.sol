@@ -3,31 +3,29 @@
 pragma solidity ^0.8.7;
 
 contract Shop {
+    struct Ratings {
+        uint32[4] ratingsCount;
+    }
     struct Product {
-        uint256 productId;
-        string contentCId;
-        string detailsCId;
-        string licenseHash;
+        string[] metadata;
         string lockedLicense;
         uint256 price;
         uint256 stock;
-        uint256 ratingsCount;
-        uint256 ratingsSum;
         uint256 salesCount;
         uint256 totalVolume;
-        uint256 purchaseTime;
+        uint256 creationTime;
+        Ratings ratings;
         bool isAvailable;
     }
 
     struct Sale {
-        uint256 saleId;
         address buyer;
         string publicKey;
         uint256 productId;
         uint256 amount;
         uint256 saleDeadline;
         string unlockedLicense;
-        uint8 rating; // struct packing
+        uint8 rating;
         SaleStatus status;
     }
 
@@ -35,7 +33,6 @@ contract Shop {
         address guild;
         address owner;
         uint256 shopBalance;
-        string detailsCId;
         string shopName;
         uint256 productsCount;
         uint256 salesCount;
@@ -52,13 +49,11 @@ contract Shop {
     address public owner;
     address[] public beneficiaryList;
 
-    string public detailsCId;
+    string[] public detailsCId;
     string public shopName;
 
     uint256 public productsCount = 0;
     uint256 public salesCount = 0;
-    uint256 public shopBalance;
-    uint256 public ownerSharePercent;
 
     uint256[] public openSaleIds;
 
@@ -84,34 +79,29 @@ contract Shop {
     ) {
         guild = _guild;
         owner = _owner;
-        detailsCId = _detailsCId;
+        detailsCId.push(_detailsCId);
         shopName = _shopName;
-        ownerSharePercent = 100;
         setBeneficiary(_beneficiaryList, _sharePercent);
     }
 
     function addProduct(
-        string memory _contentCId,
-        string memory _detailsCId,
-        string memory _licenseHash,
+        string[] memory _metadata,
         string memory _lockedLicense,
         uint256 _price,
         uint256 _stock
     ) external onlyGuild {
+        uint32[4] memory _ratingsCount;
+
         products.push(
             Product({
-                productId: productsCount,
-                contentCId: _contentCId,
-                detailsCId: _detailsCId,
-                licenseHash: _licenseHash,
+                metadata: _metadata,
                 lockedLicense: _lockedLicense,
                 price: _price,
                 stock: _stock,
                 salesCount: 0,
-                ratingsCount: 0,
-                ratingsSum: 0,
                 totalVolume: 0,
-                purchaseTime: 0,
+                creationTime: block.timestamp,
+                ratings: Ratings(_ratingsCount),
                 isAvailable: true
             })
         );
@@ -132,12 +122,11 @@ contract Shop {
         require(products[_productId].price <= msg.value, "Payment is too low");
 
         sales[salesCount] = Sale({
-            saleId: salesCount,
             buyer: _buyer,
             publicKey: _publicKey,
             productId: _productId,
             amount: msg.value,
-            saleDeadline: block.timestamp + 10000,
+            saleDeadline: block.timestamp + 2 minutes,
             unlockedLicense: "",
             rating: 0,
             status: SaleStatus.Requested
@@ -189,7 +178,6 @@ contract Shop {
         sales[_saleId].unlockedLicense = _unlockedLicense;
         sales[_saleId].status = SaleStatus.Completed;
         products[sales[_saleId].productId].totalVolume += sales[_saleId].amount;
-        products[sales[_saleId].productId].purchaseTime = block.timestamp;
 
         allocateAmount(sales[_saleId].amount);
 
@@ -201,8 +189,6 @@ contract Shop {
     }
 
     function allocateAmount(uint256 _amount) internal {
-        shopBalance += (ownerSharePercent * _amount) / 100;
-
         for (uint256 i = 0; i < beneficiaryList.length; i++) {
             beneficiaryBalance[beneficiaryList[i]] +=
                 (beneficiarySharePercent[beneficiaryList[i]] * _amount) /
@@ -217,8 +203,7 @@ contract Shop {
         );
         sales[_saleId].rating = _rating;
         sales[_saleId].status = SaleStatus.Rated;
-        products[sales[_saleId].productId].ratingsCount++;
-        products[sales[_saleId].productId].ratingsSum += _rating;
+        products[sales[_saleId].productId].ratings.ratingsCount[_rating]++;
     }
 
     function shelfProduct(uint256 _productId) external onlyGuild {
@@ -261,18 +246,10 @@ contract Shop {
             totalShare += _sharePercent[i];
         }
 
-        require(
-            totalShare + ownerSharePercent == 100,
-            "Total share must be 100%"
-        );
+        require(totalShare == 100, "Total share must be 100%");
     }
 
-    function withdrawBalance() public {
-        uint256 tempShopBalance = shopBalance;
-        shopBalance = 0;
-        (bool sent, ) = owner.call{value: tempShopBalance}("");
-        require(sent, "Error on withdraw");
-
+    function withdrawBalance() external {
         for (uint256 i = 0; i < beneficiaryList.length; i++) {
             uint256 tempBeneficiaryBalance = beneficiaryBalance[
                 beneficiaryList[i]
@@ -311,8 +288,7 @@ contract Shop {
             ShopInfo({
                 guild: guild,
                 owner: owner,
-                shopBalance: shopBalance,
-                detailsCId: detailsCId,
+                shopBalance: beneficiaryBalance[owner],
                 shopName: shopName,
                 productsCount: productsCount,
                 salesCount: salesCount
@@ -325,5 +301,13 @@ contract Shop {
 
     function getProductCount() external view returns (uint256) {
         return productsCount;
+    }
+
+    function getProductMetadata(uint256 _productId, uint256 _version)
+        external
+        view
+        returns (string memory)
+    {
+        return products[_productId].metadata[_version];
     }
 }

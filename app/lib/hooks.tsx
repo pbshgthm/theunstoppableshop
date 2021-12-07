@@ -228,3 +228,23 @@ async function multicallSaleInfo(shopId: number, closedSaleIds: number[]) {
   const closedSaleInfos = await call();
   return closedSaleInfos;
 }
+
+export function useShopSaleInfo(shopId: number) {
+  async function fetcher() {
+    const response = provider.getLogs({
+      address: chainLinkAddress,
+      topics: [
+        "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+        ethers.utils.hexZeroPad(account, 32),
+      ],
+      fromBlock: "0x0",
+      toBlock: "latest",
+    });
+    return response.then((logs: ethers.providers.Log[]) => {
+      return logs.map((log) => ILink.parseLog(log));
+    });
+  }
+  let ILink = new ethers.utils.Interface(chainLinkABI);
+  const { data, error } = useSWR(["events", account], fetcher);
+  return { data, error };
+}
