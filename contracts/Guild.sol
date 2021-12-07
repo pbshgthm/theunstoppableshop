@@ -235,6 +235,15 @@ contract Guild {
         uint256 _redeemCredits
     ) public payable {
         //require(msg.sender != IShop(shops[_shopId]).getOwner());
+        if (bytes(_publicKey).length == 0) {
+            require(
+                bytes(buyerEncryptionKeys[msg.sender]).length != 0,
+                "No encryption key found for this user"
+            );
+            _publicKey = buyerEncryptionKeys[msg.sender];
+        }
+
+        require(msg.sender != IShop(shops[_shopId]).getOwner());
 
         require(
             buyerCredits[msg.sender] >= _redeemCredits,
