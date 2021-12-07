@@ -6,13 +6,19 @@ contract Shop {
     struct Ratings {
         uint32[4] ratingsCount;
     }
+
+    struct Beneficiary {
+        address addr;
+        uint8 share;
+    }
+
     struct Product {
-        string[] metadata;
+        string[] metadata; // content cid
         string lockedLicense;
         uint256 price;
         uint256 stock;
         uint256 salesCount;
-        uint256 totalVolume;
+        uint256 totalVolume; //total amount
         uint256 creationTime;
         Ratings ratings;
         bool isAvailable;
@@ -47,13 +53,14 @@ contract Shop {
 
     address public guild;
     address public owner;
-    address[] public beneficiaryList;
+    Beneficiary[] public beneficiaries;
 
     string[] public detailsCId;
     string public shopName;
 
     uint256 public productsCount = 0;
     uint256 public salesCount = 0;
+    uint256 shopBalance = 0;
 
     uint256[] public openSaleIds;
 
@@ -62,7 +69,6 @@ contract Shop {
     mapping(uint256 => Sale) public sales;
     mapping(uint256 => uint256) public openSaleIdToIndex;
     mapping(address => uint256) public beneficiarySharePercent;
-    mapping(address => uint256) public beneficiaryBalance;
 
     modifier onlyGuild() {
         require(msg.sender == guild, "Only guild can call this function");
@@ -74,14 +80,13 @@ contract Shop {
         address _guild,
         string memory _shopName,
         string memory _detailsCId,
-        address[] memory _beneficiaryList,
-        uint256[] memory _sharePercent
+        Beneficiary[] memory _beneficiaries
     ) {
         guild = _guild;
         owner = _owner;
         detailsCId.push(_detailsCId);
         shopName = _shopName;
-        setBeneficiary(_beneficiaryList, _sharePercent);
+        setBeneficiary(_beneficiaries);
     }
 
     function updateShopMetadata(string memory _detailsCId) external onlyGuild {
@@ -191,21 +196,11 @@ contract Shop {
         sales[_saleId].status = SaleStatus.Completed;
         products[sales[_saleId].productId].totalVolume += sales[_saleId].amount;
 
-        allocateAmount(sales[_saleId].amount);
-
         openSaleIds[openSaleIdToIndex[_saleId]] = openSaleIds[
             openSaleIds.length - 1
         ];
         openSaleIds.pop();
         delete openSaleIdToIndex[_saleId];
-    }
-
-    function allocateAmount(uint256 _amount) internal {
-        for (uint256 i = 0; i < beneficiaryList.length; i++) {
-            beneficiaryBalance[beneficiaryList[i]] +=
-                (beneficiarySharePercent[beneficiaryList[i]] * _amount) /
-                100;
-        }
     }
 
     function addRating(uint256 _saleId, uint8 _rating) external onlyGuild {
@@ -237,39 +232,34 @@ contract Shop {
     }
 
     // function to set beneficiary
-    function setBeneficiary(
-        address[] memory _beneficiaryList,
-        uint256[] memory _sharePercent
-    ) internal {
-        // deleting current share percent values
-        for (uint256 i = 0; i < _beneficiaryList.length; i++) {
-            delete beneficiarySharePercent[_beneficiaryList[i]];
-        }
-
+    function setBeneficiary(Beneficiary[] memory _beneficiaries) internal {
         uint256 totalShare = 0;
-        beneficiaryList = _beneficiaryList;
-        for (uint256 i = 0; i < beneficiaryList.length; i++) {
-            require(_sharePercent[i] != 0, "beneficiary share cannot be 0");
+
+        for (uint256 i = 0; i < _beneficiaries.length; i++) {
             require(
-                _beneficiaryList[i] != address(0),
+                _beneficiaries[i].share != 0,
+                "beneficiary share cannot be 0"
+            );
+            require(
+                _beneficiaries[i].addr != address(0),
                 "beneficiary cannot be 0"
             );
-            beneficiarySharePercent[beneficiaryList[i]] = _sharePercent[i];
-            totalShare += _sharePercent[i];
+
+            totalShare += _beneficiaries[i].share;
+
+            beneficiaries.push(_beneficiaries[i]);
         }
 
         require(totalShare == 100, "Total share must be 100%");
     }
 
     function withdrawBalance() external {
-        for (uint256 i = 0; i < beneficiaryList.length; i++) {
-            uint256 tempBeneficiaryBalance = beneficiaryBalance[
-                beneficiaryList[i]
-            ];
-            beneficiaryBalance[beneficiaryList[i]] = 0;
-            (bool success, ) = beneficiaryList[i].call{
-                value: tempBeneficiaryBalance
-            }("");
+        uint256 tempShopBalance = shopBalance;
+        shopBalance = 0;
+        for (uint256 i = 0; i < beneficiaries.length; i++) {
+            uint256 amount = (beneficiaries[i].share * tempShopBalance) / 100;
+
+            (bool success, ) = beneficiaries[i].addr.call{value: amount}("");
             require(success, "Error on withdraw");
         }
     }
@@ -300,7 +290,7 @@ contract Shop {
             ShopInfo({
                 guild: guild,
                 owner: owner,
-                shopBalance: beneficiaryBalance[owner],
+                shopBalance: shopBalance,
                 shopName: shopName,
                 productsCount: productsCount,
                 salesCount: salesCount

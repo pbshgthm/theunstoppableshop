@@ -229,7 +229,7 @@ async function multicallSaleInfo(shopId: number, closedSaleIds: number[]) {
   return closedSaleInfos;
 }
 
-export function useShopSaleInfo(shopId: number) {
+export function useMyShops(account: string) {
   async function fetcher() {
     const response = provider.getLogs({
       address: chainLinkAddress,
