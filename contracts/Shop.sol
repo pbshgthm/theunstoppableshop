@@ -86,7 +86,7 @@ contract Shop {
         string memory _detailsCId,
         Beneficiary[] memory _beneficiaries
     ) {
-        validateBeneficiary(_beneficiaries);
+        setBeneficiary(_beneficiaries);
         shopInfo = ShopInfo({
             guild: _guild,
             owner: _owner,
@@ -96,7 +96,6 @@ contract Shop {
             productsCount: 0,
             salesCount: 0
         });
-        beneficiaries = _beneficiaries;
     }
 
     function updateShopDetails(string memory _detailsCId) external onlyGuild {
@@ -238,10 +237,7 @@ contract Shop {
         ]++;
     }
 
-    function validateBeneficiary(Beneficiary[] memory _beneficiaries)
-        internal
-        pure
-    {
+    function setBeneficiary(Beneficiary[] memory _beneficiaries) internal {
         uint256 totalShare = 0;
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
             require(
@@ -252,6 +248,7 @@ contract Shop {
                 _beneficiaries[i].addr != address(0),
                 "beneficiary cannot be 0"
             );
+            beneficiaries.push(_beneficiaries[i]);
             totalShare += _beneficiaries[i].share;
         }
 
