@@ -212,6 +212,7 @@ contract Shop {
         sales[_saleId].unlockedLicense = _unlockedLicense;
         sales[_saleId].status = SaleStatus.Completed;
         products[sales[_saleId].productId].revenue += sales[_saleId].amount;
+        shopInfo.shopBalance += sales[_saleId].amount;
 
         openSaleIds[openSaleIdToIndex[_saleId]] = openSaleIds[
             openSaleIds.length - 1
