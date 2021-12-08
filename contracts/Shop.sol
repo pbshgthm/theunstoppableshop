@@ -229,6 +229,7 @@ contract Shop {
             sales[_saleId].status == SaleStatus.Completed,
             "Sale is not completed or already rated"
         );
+        require(_rating != RatingOptions.Unrated, "Rating is unrated");
 
         sales[_saleId].rating = _rating;
         sales[_saleId].status = SaleStatus.Rated;

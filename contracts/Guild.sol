@@ -139,7 +139,6 @@ contract Guild {
     address[] public shops;
     uint256 ratingReward = 0.001 ether;
     uint256 serviceTax = 0.2 ether;
-    uint256 constant MAX_UINT = 2**256 - 1;
     uint256[] pendingRequests;
 
     IShopFactory FactoryInterface;
@@ -162,7 +161,7 @@ contract Guild {
         uint256 saleId
     );
 
-    event ShopCreated(uint256 shopId, address indexed owner); // emitted
+    event ShopCreated(uint256 shopId, address indexed owner);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call the function!");
@@ -274,8 +273,6 @@ contract Guild {
         string memory _publicKey,
         uint256 _amount
     ) internal {
-        //require(msg.sender != IShop(shops[_shopId]).getOwner());
-
         if (bytes(_publicKey).length == 0) {
             require(
                 bytes(buyerPublicKeys[msg.sender]).length != 0,
@@ -371,6 +368,7 @@ contract Guild {
         string memory _publicKey,
         uint256 _redeemCredits
     ) external payable {
+        //require(msg.sender != IShop(shops[_shopId]).getOwner());
         uint256 avaiableAmount = msg.value;
         require(
             buyerCredits[msg.sender] >= _redeemCredits,
@@ -380,7 +378,7 @@ contract Guild {
         avaiableAmount += _redeemCredits;
 
         for (uint256 i = 0; i < _cartItems.length; i++) {
-            require(avaiableAmount > _cartItems[i].amount, "Not enough funds");
+            require(avaiableAmount >= _cartItems[i].amount, "Not enough funds");
             avaiableAmount -= _cartItems[i].amount;
             requestSale(
                 _cartItems[i].shopId,
