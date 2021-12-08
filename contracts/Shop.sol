@@ -234,7 +234,7 @@ contract Shop {
         sales[_saleId].rating = _rating;
         sales[_saleId].status = SaleStatus.Rated;
         products[sales[_saleId].productId].ratings.ratingsCount[
-            uint256(_rating)
+            uint256(_rating) - 1
         ]++;
     }
 
