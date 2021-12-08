@@ -8,7 +8,7 @@ contract Shop {
     }
 
     struct Beneficiary {
-        address addr;
+        address payable addr;
         uint8 share;
     }
 

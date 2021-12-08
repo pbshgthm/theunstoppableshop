@@ -4,17 +4,21 @@ pragma solidity ^0.8.7;
 
 interface IShopFactory {
     function createShop(
-        address owner,
+        address _shopOwner,
         string memory _shopName,
         string memory _detailsCId,
-        address[] memory _beneficiaryList,
-        uint256[] memory _sharePercent
+        IShop.Beneficiary[] memory _beneficiaries
     ) external;
 
     function getLatestShopAddress() external view returns (address);
 }
 
 interface IShop {
+    struct Beneficiary {
+        address addr;
+        uint8 share;
+    }
+
     struct Sale {
         address buyer;
         string publicKey;
@@ -149,7 +153,6 @@ contract Guild {
     mapping(string => bool) public isShopNameTaken;
     mapping(address => uint256) public buyerCredits;
     mapping(address => string) public buyerPublicKeys;
-    mapping(address => uint256) public beneficiaryBalances;
 
     //Events
     event ProductCreated(uint256 indexed shopId, uint256 productId);
@@ -215,7 +218,7 @@ contract Guild {
         uint256 _price,
         uint256 _stock,
         bool _isAvailable
-    ) external {
+    ) external onlyShopOwner(_shopId) {
         IShop(shops[_shopId]).updateProduct(
             _productId,
             _contentCID,
@@ -228,8 +231,7 @@ contract Guild {
     function createShop(
         string memory _shopName,
         string memory _detailsCId,
-        address[] memory _beneficiaryList,
-        uint256[] memory _sharePercent
+        IShop.Beneficiary[] memory _beneficiaries
     ) external {
         require(!isShopNameTaken[_shopName], "Shop name already taken");
 
@@ -237,8 +239,7 @@ contract Guild {
             msg.sender,
             _shopName,
             _detailsCId,
-            _beneficiaryList,
-            _sharePercent
+            _beneficiaries
         );
 
         shops.push(FactoryInterface.getLatestShopAddress());
@@ -369,17 +370,20 @@ contract Guild {
         uint256 _redeemCredits
     ) external payable {
         //require(msg.sender != IShop(shops[_shopId]).getOwner());
-        uint256 avaiableAmount = msg.value;
+        uint256 availableAmount = msg.value;
         require(
             buyerCredits[msg.sender] >= _redeemCredits,
             "Not enough credits"
         );
         buyerCredits[msg.sender] -= _redeemCredits;
-        avaiableAmount += _redeemCredits;
+        availableAmount += _redeemCredits;
 
         for (uint256 i = 0; i < _cartItems.length; i++) {
-            require(avaiableAmount >= _cartItems[i].amount, "Not enough funds");
-            avaiableAmount -= _cartItems[i].amount;
+            require(
+                availableAmount >= _cartItems[i].amount,
+                "Not enough funds"
+            );
+            availableAmount -= _cartItems[i].amount;
             requestSale(
                 _cartItems[i].shopId,
                 _cartItems[i].productId,
