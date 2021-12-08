@@ -164,6 +164,12 @@ contract Guild {
         uint256 saleId
     );
 
+    event BalanceWithdrawn(
+        uint256 indexed shopId,
+        address caller,
+        uint256 balance
+    );
+
     event ShopCreated(uint256 shopId, address indexed owner);
 
     modifier onlyOwner() {
@@ -340,7 +346,9 @@ contract Guild {
     }
 
     function withdrawBalance(uint256 _shopId) external {
+        uint256 balance = getShopInfo(_shopId).shopBalance;
         IShop(shops[_shopId]).withdrawBalance();
+        emit BalanceWithdrawn(_shopId, msg.sender, balance);
     }
 
     function completeUnlock(uint256 _requestId, string memory _unlockedLicense)
@@ -411,7 +419,7 @@ contract Guild {
     }
 
     function getShopInfo(uint256 _shopId)
-        external
+        public
         view
         returns (IShop.ShopInfo memory)
     {
@@ -440,5 +448,27 @@ contract Guild {
 
     function getProductsCount(uint256 _shopId) external view returns (uint256) {
         return IShop(shops[_shopId]).getProductsCount();
+    }
+
+    function getGuildInfo()
+        external
+        view
+        returns (
+            address,
+            address,
+            address,
+            uint256,
+            uint256
+        )
+    {
+        return (owner, oracleClient, shopFactory, ratingReward, serviceTax);
+    }
+
+    function getShopIdFromHandle(string memory _shopName)
+        external
+        view
+        returns (uint256)
+    {
+        return shopNameToShopId[_shopName];
     }
 }

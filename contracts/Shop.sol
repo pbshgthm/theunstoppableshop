@@ -258,6 +258,7 @@ contract Shop {
 
     function withdrawBalance() external {
         uint256 shopBalance = shopInfo.shopBalance;
+
         shopInfo.shopBalance = 0;
         for (uint256 i = 0; i < beneficiaries.length; i++) {
             uint256 amount = (beneficiaries[i].share * shopBalance) / 100;
