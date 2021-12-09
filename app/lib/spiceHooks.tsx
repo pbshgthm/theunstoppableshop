@@ -2,6 +2,7 @@ import { LogDescription } from "@ethersproject/abi";
 import { ethers } from "ethers";
 import { Contract, Provider } from "ethers-multicall";
 import useSWR from "swr";
+import { SaleDeets, ProductDeets } from "./interfaces";
 
 import guildABI from "../../hardhat/artifacts/contracts/Guild.sol/Guild.json";
 import shopFactoryABI from "../../hardhat/artifacts/contracts/ShopFactory.sol/ShopFactory.json";
@@ -197,14 +198,88 @@ async function getSaleId(
     )
     .then((logs) => logs.map((log) => parseInt(log.args.saleId)));
 }
+// address buyer;
+// string publicKey;
+// uint256 productId;
+// uint256 amount;
+// uint256 saleDeadline;
+// string unlockedLicense;
+// RatingOptions rating;
+// SaleStatus status;
+
+// string[] contentCID;
+// string lockedLicense;
+// uint256 price;
+// uint256 stock;
+// uint256 salesCount;
+// uint256 revenue;
+// uint256 creationTime;
+// Ratings ratings;
+// bool isAvailable;
 
 export function getBuyerSales(buyerAddress: string) {
   const fetcher = async () => {
     const saleDeets = await getBuyerSaleDeets(buyerAddress);
+
+    const buyerSaleInfosRaw = await multicallSaleInfo(saleDeets);
+
+    const buyerSaleInfos = buyerSaleInfosRaw.map((buyerSaleInfoRaw) => ({
+      shopId: parseInt(buyerSaleInfoRaw.at(-1)),
+      productId: parseInt(buyerSaleInfoRaw[2]),
+      amount: ethers.utils.formatEther(buyerSaleInfoRaw[3]),
+      saleDeadline: parseInt(buyerSaleInfoRaw[4]),
+      rating: parseInt(buyerSaleInfoRaw[6]),
+      price: "",
+      contentCID: "",
+    }));
+
+    const buyerProductDeets = buyerSaleInfos.map((buyerSaleInfo) => ({
+      shopId: buyerSaleInfo.shopId,
+      productId: buyerSaleInfo.productId,
+    }));
+    const buyerProductInfoRaw = await multicallProductInfo(buyerProductDeets);
+    for (let i = 0; i < buyerProductInfoRaw.length; i++) {
+      buyerSaleInfos[i].price = ethers.utils.formatEther(
+        buyerProductInfoRaw[i][2]
+      );
+      buyerSaleInfos[i].contentCID =
+        buyerProductInfoRaw[i][0][saleDeets[i].contentVersion - 1];
+    }
+    return buyerSaleInfos;
   };
+
+  const { data, error } = useSWR(["getBuyerSales"], fetcher);
+  return { data, error };
 }
 
-async function multicallSaleInfo(saleDeets: any) {
+async function multicallProductInfo(productDeets: ProductDeets[]) {
+  const guild = new Contract(guildAddress, guildABI.abi);
+
+  async function call() {
+    const ethcallProvider = new Provider(provider);
+
+    await ethcallProvider.init(); // Only required when `chainId` is not provided in the `Provider` constructor
+    const productInfoCalls = [];
+
+    for (let key in productDeets) {
+      productInfoCalls.push(
+        guild.getProductInfo(
+          productDeets[key].shopId,
+          productDeets[key].productId
+        )
+      );
+    }
+
+    const productInfos = await ethcallProvider.all(productInfoCalls);
+
+    return productInfos;
+  }
+
+  const productInfos = await call();
+  return productInfos;
+}
+
+async function multicallSaleInfo(saleDeets: SaleDeets[]) {
   const guild = new Contract(guildAddress, guildABI.abi);
 
   async function call() {
@@ -217,13 +292,15 @@ async function multicallSaleInfo(saleDeets: any) {
         guild.getSaleInfo(saleDeets[sale].shopId, saleDeets[sale].saleId)
       );
     }
-    const closedSaleInfos = await ethcallProvider.all(saleInfoCalls);
+    const buyerSaleInfos = await ethcallProvider.all(saleInfoCalls);
 
-    return closedSaleInfos;
+    return buyerSaleInfos;
   }
 
-  const closedSaleInfos = await call();
-  return closedSaleInfos;
+  const buyerSaleInfos = await call();
+  return buyerSaleInfos.map((buyerSaleInfo, index) => {
+    return [...buyerSaleInfo, saleDeets[index].shopId];
+  });
 }
 
 async function getBuyerSaleDeets(buyerAddress: string) {
@@ -249,6 +326,7 @@ async function getBuyerSaleDeets(buyerAddress: string) {
       logs.map((log) => ({
         shopId: parseInt(log.args.shopId),
         saleId: parseInt(log.args.saleId),
+        contentVersion: parseInt(log.args.contentVersion),
       }))
     );
 }

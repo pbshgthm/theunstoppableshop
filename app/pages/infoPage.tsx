@@ -7,6 +7,7 @@ import {
   getProductList,
   getProduct,
   getSale,
+  getBuyerSales,
 } from "../lib/spiceHooks";
 
 import { createShop, addProduct } from "../lib/contractCalls";
@@ -44,12 +45,12 @@ const appInfo: NextPage = () => {
     "0xDa69589145AEBaa0cDae6dAC6512Db0363F44B70"
   );
 
-  // console.log(productData);
+  const { data: buyerSales } = getBuyerSales(
+    "0xDa69589145AEBaa0cDae6dAC6512Db0363F44B70"
+  );
 
   // async function getShopData() {
-  //   const shopData = await getSale(
-  //     0,
-  //     0,
+  //   const shopData = await buyerSaleFetcher(
   //     "0xDa69589145AEBaa0cDae6dAC6512Db0363F44B70"
   //   );
   //   console.log(shopData);
@@ -94,6 +95,18 @@ const appInfo: NextPage = () => {
       <br />
       <br />
       {saleData && <pre>{JSON.stringify(saleData, null, 2)}</pre>}
+      <br />
+      <br />
+      getBuyerSales(0xDa69589145AEBaa0cDae6dAC6512Db0363F44B70):
+      <br />
+      <br />
+      {buyerSales && <pre>{JSON.stringify(buyerSales, null, 2)}</pre>}
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
       <br />
       <br />
     </div>
