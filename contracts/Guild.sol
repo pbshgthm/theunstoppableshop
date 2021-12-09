@@ -80,6 +80,10 @@ interface IShop {
         view
         returns (Product memory);
 
+    function getProducts() external view returns (Product[] memory);
+
+    function getBeneficiaries() external view returns (Beneficiary[] memory);
+
     function updateShopDetails(string memory _detailsCId) external;
 
     function getRefund(uint256 _saleId) external payable;
@@ -470,5 +474,21 @@ contract Guild {
         returns (uint256)
     {
         return shopNameToShopId[_shopName];
+    }
+
+    function getProducts(uint256 _shopId)
+        external
+        view
+        returns (IShop.Product[] memory)
+    {
+        return IShop(shops[_shopId]).getProducts();
+    }
+
+    function getBeneficiaries(uint256 _shopId)
+        external
+        view
+        returns (IShop.Beneficiary[] memory)
+    {
+        return IShop(shops[_shopId]).getBeneficiaries();
     }
 }

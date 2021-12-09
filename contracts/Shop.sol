@@ -299,4 +299,12 @@ contract Shop {
     function getOpenSaleIds() external view returns (uint256[] memory) {
         return openSaleIds;
     }
+
+    function getProducts() external view returns (Product[] memory) {
+        return products;
+    }
+
+    function getBeneficiaries() external view returns (Beneficiary[] memory) {
+        return beneficiaries;
+    }
 }

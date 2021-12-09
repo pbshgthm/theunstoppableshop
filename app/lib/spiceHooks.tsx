@@ -1,4 +1,3 @@
-import { LogDescription } from "@ethersproject/abi";
 import { ethers } from "ethers";
 import { Contract, Provider } from "ethers-multicall";
 import useSWR from "swr";
@@ -11,9 +10,9 @@ import oracleABI from "../../hardhat/artifacts/contracts/UnlockOracleClient.sol/
 const rpcApi =
   "https://polygon-mumbai.g.alchemy.com/v2/9rE76R64EAB61z4CE3BTnMwza-7R4HiV";
 
-const oracleAddress = "0xE01b7124aA2CBbe2eB01D0680f1dcc7635504D86";
-const shopFactoryAddress = "0x625C217b0af0Bd5d1cBa0E4e2f54E91e14361c3F";
-const guildAddress = "0x828Bc16dcf05B4A9efE887F2b9689475b163f668";
+const oracleAddress = "0x07D5ff9e4863E6B017fC12bE08104368Cfd6A5fd";
+const shopFactoryAddress = " 0x64051cf6e10FD405Ba2D857b078057602d71AA23";
+const guildAddress = "0x55Efc7A4De9c55417268884453933aD0D80ac7F4";
 
 // event topics
 const requestedSaleTopic =
@@ -72,7 +71,6 @@ async function multicallShopInfo(shopIds: number[]) {
   const shopInfos = await call();
   return shopInfos;
 }
-
 export function getShop(shopId: number) {
   const fetcher = async () => {
     const rawShopInfo = await guild.getShopInfo(shopId);
@@ -110,15 +108,7 @@ export function getProductList(shopId: number) {
   const { data, error } = useSWR(["getProductList", shopId], fetcher);
   return { data, error };
 }
-// string[] contentCID;
-// string lockedLicense;
-// uint256 price;
-// uint256 stock;
-// uint256 salesCount;
-// uint256 revenue;
-// uint256 creationTime;
-// Ratings ratings;
-// bool isAvailable;
+
 export function getProduct(
   shopId: number,
   productId: number,
@@ -225,6 +215,7 @@ export function getBuyerSales(buyerAddress: string) {
 
     const buyerSaleInfos = buyerSaleInfosRaw.map((buyerSaleInfoRaw) => ({
       shopId: parseInt(buyerSaleInfoRaw.at(-1)),
+      shopOwner: "",
       productId: parseInt(buyerSaleInfoRaw[2]),
       amount: ethers.utils.formatEther(buyerSaleInfoRaw[3]),
       saleDeadline: parseInt(buyerSaleInfoRaw[4]),
@@ -244,6 +235,10 @@ export function getBuyerSales(buyerAddress: string) {
       );
       buyerSaleInfos[i].contentCID =
         buyerProductInfoRaw[i][0][saleDeets[i].contentVersion - 1];
+
+      buyerSaleInfos[i].shopOwner = await getShopOwner(
+        buyerSaleInfos[i].shopId
+      );
     }
     return buyerSaleInfos;
   };
@@ -329,4 +324,9 @@ async function getBuyerSaleDeets(buyerAddress: string) {
         contentVersion: parseInt(log.args.contentVersion),
       }))
     );
+}
+
+async function getShopOwner(shopId: number) {
+  const shopInfo = await guild.getShopInfo(shopId);
+  return shopInfo[1];
 }

@@ -10,9 +10,9 @@ import oracleABI from "../../hardhat/artifacts/contracts/UnlockOracleClient.sol/
 const rpcApi =
   "https://polygon-mumbai.g.alchemy.com/v2/9rE76R64EAB61z4CE3BTnMwza-7R4HiV";
 
-const oracleAddress = "0xE01b7124aA2CBbe2eB01D0680f1dcc7635504D86";
-const shopFactoryAddress = "0x625C217b0af0Bd5d1cBa0E4e2f54E91e14361c3F";
-const guildAddress = "0x828Bc16dcf05B4A9efE887F2b9689475b163f668";
+const oracleAddress = "0x07D5ff9e4863E6B017fC12bE08104368Cfd6A5fd";
+const shopFactoryAddress = "0x64051cf6e10FD405Ba2D857b078057602d71AA23";
+const guildAddress = "0x55Efc7A4De9c55417268884453933aD0D80ac7F4";
 const provider = new ethers.providers.JsonRpcProvider(rpcApi);
 
 export async function createShop(
@@ -23,7 +23,7 @@ export async function createShop(
 ) {
   const signer = new ethers.providers.Web3Provider(ethereum).getSigner();
   const guild = new ethers.Contract(guildAddress, guildABI.abi, signer);
-  const txn = await guild.createShop("sushi3", "deets3", [
+  const txn = await guild.createShop("sushi4", "deets4", [
     ["0x14ab838b241F234C51E7Ee2d6F077b50605b0003", 50],
     ["0xDa69589145AEBaa0cDae6dAC6512Db0363F44B70", 50],
   ]);
