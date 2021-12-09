@@ -1,0 +1,138 @@
+{
+	"compiler": {
+		"version": "0.8.7+commit.e28d00a7"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_guild",
+						"type": "address"
+					}
+				],
+				"name": "addMemberGuild",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_shopOwner",
+						"type": "address"
+					},
+					{
+						"internalType": "string",
+						"name": "_shopName",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "_detailsCId",
+						"type": "string"
+					},
+					{
+						"components": [
+							{
+								"internalType": "address payable",
+								"name": "addr",
+								"type": "address"
+							},
+							{
+								"internalType": "uint8",
+								"name": "share",
+								"type": "uint8"
+							}
+						],
+						"internalType": "struct Shop.Beneficiary[]",
+						"name": "_beneficiaries",
+						"type": "tuple[]"
+					}
+				],
+				"name": "createShop",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getLatestShopAddress",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "manager",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/ShopFactory.sol": "ShopFactory"
+		},
+		"evmVersion": "london",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/Shop.sol": {
+			"keccak256": "0xe1620636cd3778c09e94e42deca805109bf3d75683cf45d1bcc8506d542f0057",
+			"license": "GPL-3.0",
+			"urls": [
+				"bzz-raw://14febf8b55d5406d8dbea0ffd1946cbcf8d8b4be7123263e2cf5df2ce084ee47",
+				"dweb:/ipfs/QmVCHuUvKxY3X9K5Cc5XcqUh6b6YnoKs4wg751pyW8GoTz"
+			]
+		},
+		"contracts/ShopFactory.sol": {
+			"keccak256": "0xf64acc83f1c9e539b273a36040b4d4ce349648d905fe8d09b87f4d53967c8943",
+			"license": "GPL-3.0",
+			"urls": [
+				"bzz-raw://03102c956b7f764ab0ff95daf70f6ec8b29c5397786505c2416a05c1a92814f5",
+				"dweb:/ipfs/QmYFHk6kJrgmRYGHzfugyHgqjyDhJC6YDTvmcUHmg28Hfw"
+			]
+		}
+	},
+	"version": 1
+}
