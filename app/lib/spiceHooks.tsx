@@ -10,9 +10,9 @@ import oracleABI from "../../hardhat/artifacts/contracts/UnlockOracleClient.sol/
 const rpcApi =
   "https://polygon-mumbai.g.alchemy.com/v2/9rE76R64EAB61z4CE3BTnMwza-7R4HiV";
 
-const oracleAddress = "0xf8C4f30765cF9bc5F9017441266321dAd7c030A2";
-const shopFactoryAddress = "0xB7c8cBB54350DF01Da95DCF0f6114a2575F988E0";
-const guildAddress = "0x7336E0A68c3Ae47Cd0b76e471657a9057a0ba7D1";
+const oracleAddress = "0x9E7ebdDB6736e611A38F296991698E2098d7C3E7";
+const shopFactoryAddress = "0xD9dAd5283C9E4Fe1B15E46b0D149bB34aA1eC6ad";
+const guildAddress = "0xA705431d0c8EFdf0408E5f1b5AE41d9dc11b115B";
 
 const provider = new ethers.providers.JsonRpcProvider(rpcApi);
 const guild = new ethers.Contract(guildAddress, guildABI.abi, provider);
@@ -327,4 +327,22 @@ async function getBuyerSaleDeets(buyerAddress: string) {
 async function getShopOwner(shopId: number) {
   const shopInfo = await guild.getShopInfo(shopId);
   return shopInfo[1];
+}
+
+export async function getOwnerShops(buyerAddress: string) {
+  let IGuild = new ethers.utils.Interface(guildABI.abi);
+  const response = provider.getLogs({
+    address: guildAddress,
+    topics: [
+      ethers.utils.id("ShopCreated(uint256,address)"),
+      ethers.utils.hexZeroPad(buyerAddress, 32),
+    ],
+    fromBlock: "0x0",
+    toBlock: "latest",
+  });
+
+  return response.then((logs: ethers.providers.Log[]) =>
+    logs.map((logs) => IGuild.parseLog(logs))
+  );
+  // .then((logs) => logs.map((log) => parseInt(log.args.shopId)));
 }

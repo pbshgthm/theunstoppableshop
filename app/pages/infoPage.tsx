@@ -8,6 +8,7 @@ import {
   getProduct,
   getSale,
   getBuyerSales,
+  getOwnerShops,
 } from "../lib/spiceHooks";
 import { createShop, addProduct } from "../lib/contractCalls";
 import { useMetaMask } from "metamask-react";
@@ -49,12 +50,14 @@ const appInfo: NextPage = () => {
     "0xDa69589145AEBaa0cDae6dAC6512Db0363F44B70"
   );
 
-  // async function getShopData() {
-  //   const shopData = await singleShopfetcher();
-  //   console.log(shopData);
-  // }
+  async function getShopData() {
+    const shopData = await getOwnerShops(
+      "0xDa69589145AEBaa0cDae6dAC6512Db0363F44B70"
+    );
+    console.log(shopData);
+  }
 
-  // getShopData();
+  getShopData();
 
   return (
     <div>
