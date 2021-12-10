@@ -9,7 +9,6 @@ import {
   getSale,
   getBuyerSales,
 } from "../lib/spiceHooks";
-
 import { createShop, addProduct } from "../lib/contractCalls";
 import { useMetaMask } from "metamask-react";
 import { useState } from "react";
@@ -36,6 +35,7 @@ const appInfo: NextPage = () => {
   const { status, connect, account, ethereum } = useMetaMask();
   const { data: shopId } = getShopId("sushi");
   const { data: shopList } = getShopList();
+
   const { data: shopData } = getShop(0);
   const { data: productList } = getProductList(0);
   const { data: productData } = getProduct(0, 0, 1);
@@ -50,9 +50,7 @@ const appInfo: NextPage = () => {
   );
 
   // async function getShopData() {
-  //   const shopData = await buyerSaleFetcher(
-  //     "0xDa69589145AEBaa0cDae6dAC6512Db0363F44B70"
-  //   );
+  //   const shopData = await singleShopfetcher();
   //   console.log(shopData);
   // }
 

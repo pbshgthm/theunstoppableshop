@@ -10,13 +10,9 @@ import oracleABI from "../../hardhat/artifacts/contracts/UnlockOracleClient.sol/
 const rpcApi =
   "https://polygon-mumbai.g.alchemy.com/v2/9rE76R64EAB61z4CE3BTnMwza-7R4HiV";
 
-const oracleAddress = "0x07D5ff9e4863E6B017fC12bE08104368Cfd6A5fd";
-const shopFactoryAddress = " 0x64051cf6e10FD405Ba2D857b078057602d71AA23";
-const guildAddress = "0x55Efc7A4De9c55417268884453933aD0D80ac7F4";
-
-// event topics
-const requestedSaleTopic =
-  "0x5cb9ba43d895b2b52a05833fb1e6a565cf3e245d62332664ecede22586f90184";
+const oracleAddress = "0xf8C4f30765cF9bc5F9017441266321dAd7c030A2";
+const shopFactoryAddress = "0xB7c8cBB54350DF01Da95DCF0f6114a2575F988E0";
+const guildAddress = "0x7336E0A68c3Ae47Cd0b76e471657a9057a0ba7D1";
 
 const provider = new ethers.providers.JsonRpcProvider(rpcApi);
 const guild = new ethers.Contract(guildAddress, guildABI.abi, provider);
@@ -51,7 +47,7 @@ export function getShopList() {
 }
 
 async function multicallShopInfo(shopIds: number[]) {
-  const guild = new Contract(guildAddress, guildABI.abi);
+  const multiguild = new Contract(guildAddress, guildABI.abi);
 
   async function call() {
     const ethcallProvider = new Provider(provider);
@@ -60,7 +56,7 @@ async function multicallShopInfo(shopIds: number[]) {
     const shopInfoCalls = [];
 
     for (let shopId of shopIds) {
-      shopInfoCalls.push(guild.getShopInfo(shopId));
+      shopInfoCalls.push(multiguild.getShopInfo(shopId));
     }
 
     const shopInfos = await ethcallProvider.all(shopInfoCalls);
@@ -75,13 +71,17 @@ export function getShop(shopId: number) {
   const fetcher = async () => {
     const rawShopInfo = await guild.getShopInfo(shopId);
     const beneficiaries = await guild.getBeneficiaries(shopId);
-
+    // address guild;
+    // address owner;
+    // string detailsCId;
+    // string shopName;
+    // uint256 productsCount;
+    // uint256 salesCount;
     const shopInfos = {
       shopOwner: rawShopInfo[1],
       detailsCId: rawShopInfo[2],
-      balance: ethers.utils.formatEther(rawShopInfo[3]),
       beneficiaries: beneficiaries,
-      productsCount: parseInt(rawShopInfo[5]),
+      productsCount: parseInt(rawShopInfo[4]),
     };
 
     return shopInfos;
@@ -172,8 +172,7 @@ async function getSaleId(
   const response = provider.getLogs({
     address: guildAddress,
     topics: [
-      // ethers.utils.id("RequestedSale(uint256,address,uint256,uint8,uint256)"),
-      requestedSaleTopic,
+      ethers.utils.id("RequestedSale(uint256,address,uint256,uint8,uint256)"),
       ethers.utils.hexZeroPad(ethers.utils.hexlify(shopId), 32),
       ethers.utils.hexZeroPad(buyerAddress, 32),
       ethers.utils.hexZeroPad(ethers.utils.hexlify(productId), 32),
@@ -248,7 +247,7 @@ export function getBuyerSales(buyerAddress: string) {
 }
 
 async function multicallProductInfo(productDeets: ProductDeets[]) {
-  const guild = new Contract(guildAddress, guildABI.abi);
+  const multiguild = new Contract(guildAddress, guildABI.abi);
 
   async function call() {
     const ethcallProvider = new Provider(provider);
@@ -258,7 +257,7 @@ async function multicallProductInfo(productDeets: ProductDeets[]) {
 
     for (let key in productDeets) {
       productInfoCalls.push(
-        guild.getProductInfo(
+        multiguild.getProductInfo(
           productDeets[key].shopId,
           productDeets[key].productId
         )
@@ -275,7 +274,7 @@ async function multicallProductInfo(productDeets: ProductDeets[]) {
 }
 
 async function multicallSaleInfo(saleDeets: SaleDeets[]) {
-  const guild = new Contract(guildAddress, guildABI.abi);
+  const multiguild = new Contract(guildAddress, guildABI.abi);
 
   async function call() {
     const ethcallProvider = new Provider(provider);
@@ -284,7 +283,7 @@ async function multicallSaleInfo(saleDeets: SaleDeets[]) {
 
     for (const sale in saleDeets) {
       saleInfoCalls.push(
-        guild.getSaleInfo(saleDeets[sale].shopId, saleDeets[sale].saleId)
+        multiguild.getSaleInfo(saleDeets[sale].shopId, saleDeets[sale].saleId)
       );
     }
     const buyerSaleInfos = await ethcallProvider.all(saleInfoCalls);
@@ -303,8 +302,7 @@ async function getBuyerSaleDeets(buyerAddress: string) {
   const response = provider.getLogs({
     address: guildAddress,
     topics: [
-      // ethers.utils.id("RequestedSale(uint256,address,uint256,uint8,uint256)"),
-      requestedSaleTopic,
+      ethers.utils.id("RequestedSale(uint256,address,uint256,uint8,uint256)"),
       null,
       ethers.utils.hexZeroPad(buyerAddress, 32),
       null,

@@ -10,9 +10,10 @@ import oracleABI from "../../hardhat/artifacts/contracts/UnlockOracleClient.sol/
 const rpcApi =
   "https://polygon-mumbai.g.alchemy.com/v2/9rE76R64EAB61z4CE3BTnMwza-7R4HiV";
 
-const oracleAddress = "0x07D5ff9e4863E6B017fC12bE08104368Cfd6A5fd";
-const shopFactoryAddress = "0x64051cf6e10FD405Ba2D857b078057602d71AA23";
-const guildAddress = "0x55Efc7A4De9c55417268884453933aD0D80ac7F4";
+const oracleAddress = "0xf8C4f30765cF9bc5F9017441266321dAd7c030A2";
+const shopFactoryAddress = "0xB7c8cBB54350DF01Da95DCF0f6114a2575F988E0";
+const guildAddress = "0x7336E0A68c3Ae47Cd0b76e471657a9057a0ba7D1";
+
 const provider = new ethers.providers.JsonRpcProvider(rpcApi);
 
 export async function createShop(
@@ -23,12 +24,14 @@ export async function createShop(
 ) {
   const signer = new ethers.providers.Web3Provider(ethereum).getSigner();
   const guild = new ethers.Contract(guildAddress, guildABI.abi, signer);
-  const txn = await guild.createShop("sushi4", "deets4", [
+  const txn = await guild.createShop("sushi5", "deets5", [
     ["0x14ab838b241F234C51E7Ee2d6F077b50605b0003", 50],
     ["0xDa69589145AEBaa0cDae6dAC6512Db0363F44B70", 50],
   ]);
-  await txn.wait();
-  console.log("Shop created");
+
+  // console.log(txn);
+  // const a = await txn.wait();
+  // console.log("Shop response", a);
 }
 
 export async function addProduct(
