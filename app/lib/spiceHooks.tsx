@@ -10,20 +10,23 @@ import oracleABI from "../../hardhat/artifacts/contracts/UnlockOracleClient.sol/
 const rpcApi =
   "https://polygon-mumbai.g.alchemy.com/v2/9rE76R64EAB61z4CE3BTnMwza-7R4HiV";
 
-const oracleAddress = "0x9E7ebdDB6736e611A38F296991698E2098d7C3E7";
-const shopFactoryAddress = "0xD9dAd5283C9E4Fe1B15E46b0D149bB34aA1eC6ad";
-const guildAddress = "0xA705431d0c8EFdf0408E5f1b5AE41d9dc11b115B";
+const oracleAddress = "0x80193Bd25C4f7EED4F05AAaee966F60c514c5034";
+const shopFactoryAddress = "0xC0aBE4b9C79559e6477FBf3b45693Aa25F51Fa5E";
+const guildAddress = "0x5276eadaa56C33B9b768357793FA1E6684242895";
 
 const provider = new ethers.providers.JsonRpcProvider(rpcApi);
 const guild = new ethers.Contract(guildAddress, guildABI.abi, provider);
 
-export function getShopId(shopName: string) {
-  const fetcher = async () => {
+export function useShopId(shopName: string | undefined) {
+  const fetcher = async (fn: string, shopName: string | undefined) => {
     const shopId = await guild.getShopIdFromHandle(shopName);
-    return shopId;
+    return parseInt(shopId);
   };
 
-  const { data, error } = useSWR(["getShopId"], fetcher);
+  const { data, error } = useSWR(
+    shopName ? ["useShopId", shopName] : null,
+    fetcher
+  );
   return { data, error };
 }
 
@@ -37,6 +40,7 @@ export function getShopList() {
       shopId: index,
       shopOwner: rawShopInfo[1],
       detailsCId: rawShopInfo[2],
+      shopName: rawShopInfo[3],
     }));
 
     return shopInfos;
@@ -329,7 +333,29 @@ async function getShopOwner(shopId: number) {
   return shopInfo[1];
 }
 
-export async function getOwnerShops(buyerAddress: string) {
+export function useOwnerShopInfo(owner: string | undefined) {
+  const fetcher = async (fn: string, owner: string) => {
+    const shopIds = await getOwnerShops(owner);
+    const shopInfoRaw = await multicallShopInfo(shopIds);
+    const OwnerShopInfo = shopInfoRaw.map((shopInfoRaw, index) => ({
+      shopId: shopIds[index],
+      shopOwner: shopInfoRaw[1],
+      detailsCID: shopInfoRaw[2],
+      shopName: shopInfoRaw[3],
+    }));
+    console.log("shopIds", shopIds);
+
+    return OwnerShopInfo;
+  };
+
+  const { data, error } = useSWR(
+    owner ? ["useOwnerShopInfo", owner] : null,
+    fetcher
+  );
+  return { data, error };
+}
+
+async function getOwnerShops(buyerAddress: string) {
   let IGuild = new ethers.utils.Interface(guildABI.abi);
   const response = provider.getLogs({
     address: guildAddress,
@@ -341,8 +367,78 @@ export async function getOwnerShops(buyerAddress: string) {
     toBlock: "latest",
   });
 
-  return response.then((logs: ethers.providers.Log[]) =>
-    logs.map((logs) => IGuild.parseLog(logs))
-  );
-  // .then((logs) => logs.map((log) => parseInt(log.args.shopId)));
+  return response
+    .then((logs: ethers.providers.Log[]) =>
+      logs.map((logs) => IGuild.parseLog(logs))
+    )
+    .then((logs) => logs.map((log) => parseInt(log.args.shopId)));
+}
+// owner, oracleClient, shopFactory, ratingReward, serviceTax;
+
+export function useGuildInfo() {
+  const fetcher = async (fn: string) => {
+    const guildInfoRaw = await guild.getGuildInfo();
+    return {
+      owner: guildInfoRaw[0],
+      oracleClient: guildInfoRaw[1],
+      shopFactory: guildInfoRaw[2],
+      ratingReward: ethers.utils.formatEther(guildInfoRaw[3]),
+      serviceTax: ethers.utils.formatEther(guildInfoRaw[4]),
+    };
+  };
+
+  const { data, error } = useSWR(["useGuildInfo"], fetcher);
+  return { data, error };
+}
+
+export function useRecentSales(shopId: number) {
+  const fetcher = async (fn: string, shopId: number) => {
+    const recentSaleIds = await getRecentSaleIds(shopId);
+    const recentSaleDeets = recentSaleIds.map((saleId) => ({
+      shopId,
+      saleId,
+    }));
+    const recentSaleInfoRaw = await multicallSaleInfo(recentSaleDeets);
+    const productIds = recentSaleInfoRaw.map((saleInfoRaw) => saleInfoRaw[2]);
+    const productDeets = productIds.map((productId) => ({
+      shopId,
+      productId,
+    }));
+    const productInfoRaw = await multicallProductInfo(productDeets);
+    const recentSaleInfo = recentSaleInfoRaw.map((saleInfoRaw, index) => ({
+      buyerAddress: saleInfoRaw[0],
+      productId: parseInt(saleInfoRaw[2]),
+      contentCID: productInfoRaw[index][0].at(-1),
+      amount: parseInt(saleInfoRaw[3]),
+    }));
+
+    return recentSaleInfo;
+  };
+
+  const { data, error } = useSWR(["useRecentSales", shopId], fetcher);
+  return { data, error };
+}
+
+async function getRecentSaleIds(shopId: number) {
+  const oneDay = 432000;
+  const { number } = await provider.getBlock("latest");
+  const fromBlock = number - 30 * oneDay;
+  const IGuild = new ethers.utils.Interface(guildABI.abi);
+  const response = provider.getLogs({
+    address: guildAddress,
+    topics: [
+      ethers.utils.id("RequestedSale(uint256,address,uint256,uint8,uint256)"),
+      ethers.utils.hexZeroPad(ethers.utils.hexlify(shopId), 32),
+      null,
+      null,
+    ],
+    fromBlock: fromBlock,
+    toBlock: "latest",
+  });
+
+  return response
+    .then((logs: ethers.providers.Log[]) =>
+      logs.map((logs) => IGuild.parseLog(logs))
+    )
+    .then((logs) => logs.map((log) => parseInt(log.args.saleId)));
 }

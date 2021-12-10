@@ -1,19 +1,26 @@
 import type { NextPage } from "next";
 
 import {
-  getShopId,
+  useShopId,
   getShopList,
   getShop,
   getProductList,
   getProduct,
   getSale,
   getBuyerSales,
-  getOwnerShops,
+  useOwnerShopInfo,
+  useGuildInfo,
+  useRecentSales,
 } from "../lib/spiceHooks";
 import { createShop, addProduct } from "../lib/contractCalls";
 import { useMetaMask } from "metamask-react";
 import { useState } from "react";
 import { ethers } from "ethers";
+
+const rpcApi =
+  "https://polygon-mumbai.g.alchemy.com/v2/9rE76R64EAB61z4CE3BTnMwza-7R4HiV";
+
+const provider = new ethers.providers.JsonRpcProvider(rpcApi);
 
 function Login() {
   const { status, connect, account } = useMetaMask();
@@ -34,7 +41,7 @@ function Login() {
 
 const appInfo: NextPage = () => {
   const { status, connect, account, ethereum } = useMetaMask();
-  const { data: shopId } = getShopId("sushi");
+  const { data: shopId, error: shopIdError } = useShopId("sushi");
   const { data: shopList } = getShopList();
 
   const { data: shopData } = getShop(0);
@@ -49,22 +56,29 @@ const appInfo: NextPage = () => {
   const { data: buyerSales } = getBuyerSales(
     "0xDa69589145AEBaa0cDae6dAC6512Db0363F44B70"
   );
+  const { data: ownerShopInfo, error: ownerShopError } = useOwnerShopInfo(
+    "0xDa69589145AEBaa0cDae6dAC6512Db0363F44B70"
+  );
 
-  async function getShopData() {
-    const shopData = await getOwnerShops(
-      "0xDa69589145AEBaa0cDae6dAC6512Db0363F44B70"
-    );
-    console.log(shopData);
-  }
+  const { data: guildInfo, error: guildError } = useGuildInfo();
 
-  getShopData();
+  const { data: recentSales, error: recentSalesError } = useRecentSales(0);
+
+  // console.log(blocknum);
+
+  // async function getShopData() {
+  //   const saleIds = useRecentSales(0);
+  //   console.log(saleIds);
+  // }
+
+  // getShopData();
 
   return (
     <div>
       <Login />
       <br />
       <br />
-      ShopId of 'sushi':{parseInt(shopId)}
+      ShopId of 'sushi':{shopIdError ? shopIdError.message : shopId}
       <br />
       <br />
       <br />
@@ -104,10 +118,29 @@ const appInfo: NextPage = () => {
       {buyerSales && <pre>{JSON.stringify(buyerSales, null, 2)}</pre>}
       <br />
       <br />
+      getOwnerShopInfo(0xDa69589145AEBaa0cDae6dAC6512Db0363F44B70):
       <br />
       <br />
+      {ownerShopInfo ? (
+        <pre>{JSON.stringify(ownerShopInfo, null, 2)}</pre>
+      ) : (
+        <pre>{JSON.stringify(ownerShopError)}</pre>
+      )}
       <br />
       <br />
+      getGuildInfo
+      <br />
+      <br />
+      {guildInfo && <pre>{JSON.stringify(guildInfo, null, 2)}</pre>}
+      <br />
+      <br />
+      getRecentSales(0):
+      <br />
+      <br />
+      {recentSales && <pre>{JSON.stringify(recentSales, null, 2)}</pre>}
+      {recentSalesError && (
+        <pre>{JSON.stringify(recentSalesError, null, 2)}</pre>
+      )}
       <br />
       <br />
     </div>
