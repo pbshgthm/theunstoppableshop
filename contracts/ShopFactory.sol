@@ -34,10 +34,17 @@ contract ShopFactory {
     function createShop(
         address _shopOwner,
         string memory _shopName,
-        string memory _detailsCId
+        string memory _detailsCId,
+        Shop.Beneficiary[] memory _beneficiaries
     ) external onlyMemberGuilds {
         latestShopAddress = address(
-            new Shop(_shopOwner, msg.sender, _shopName, _detailsCId)
+            new Shop(
+                _shopOwner,
+                msg.sender,
+                _shopName,
+                _detailsCId,
+                _beneficiaries
+            )
         );
     }
 
