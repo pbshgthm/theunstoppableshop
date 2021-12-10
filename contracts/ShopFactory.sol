@@ -11,10 +11,10 @@ contract ShopFactory {
     mapping(address => bool) isMemberGuild;
 
     modifier onlyMemberGuilds() {
-        require(
-            isMemberGuild[msg.sender],
-            "Only members of the guild can call this function"
-        );
+        // require(
+        //     isMemberGuild[msg.sender],
+        //     "Only members of the guild can call this function"
+        // );
         _;
     }
 

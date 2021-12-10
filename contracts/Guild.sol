@@ -61,7 +61,6 @@ interface IShop {
         address guild;
         address owner;
         string detailsCId;
-        uint256 shopBalance;
         string shopName;
         uint256 productsCount;
         uint256 salesCount;
@@ -87,6 +86,11 @@ interface IShop {
     function updateShopDetails(string memory _detailsCId) external;
 
     function getRefund(uint256 _saleId) external payable;
+
+    function getShopInfo()
+        external
+        view
+        returns (ShopInfo memory, Beneficiary[] memory);
 
     function addProduct(
         string[] memory _contentCID,
@@ -116,8 +120,6 @@ interface IShop {
     function closeSale(uint256 _saleId, string memory _unlockedLicense)
         external;
 
-    function getShopInfo() external view returns (ShopInfo memory);
-
     function getOpenSaleIds() external view returns (uint256[] memory);
 }
 
@@ -145,8 +147,8 @@ contract Guild {
     address oracleClient;
     address public shopFactory;
     address[] public shops;
-    uint256 ratingReward = 0.001 ether;
-    uint256 serviceTax = 0.2 ether;
+    uint256 ratingReward = 0.000 ether; // CHANGE IT
+    uint256 serviceTax = 0 ether;
     uint256[] pendingRequests;
 
     IShopFactory FactoryInterface;
@@ -168,11 +170,11 @@ contract Guild {
         uint256 saleId
     );
 
-    event BalanceWithdrawn(
-        uint256 indexed shopId,
-        address caller,
-        uint256 balance
-    );
+    // event BalanceWithdrawn(
+    //     uint256 indexed shopId,
+    //     address caller,
+    //     uint256 balance
+    // );
 
     event ShopCreated(uint256 shopId, address indexed owner);
 
@@ -256,7 +258,7 @@ contract Guild {
         shopNameToShopId[_shopName] = shops.length - 1;
         isShopNameTaken[_shopName] = true;
 
-        emit ShopCreated(shopNameToShopId[_shopName], owner);
+        emit ShopCreated(shopNameToShopId[_shopName], msg.sender);
     }
 
     function addProduct(
@@ -284,14 +286,6 @@ contract Guild {
         string memory _publicKey,
         uint256 _amount
     ) internal {
-        if (bytes(_publicKey).length == 0) {
-            require(
-                bytes(buyerPublicKeys[msg.sender]).length != 0,
-                "No public key found for this user"
-            );
-            _publicKey = buyerPublicKeys[msg.sender];
-        }
-
         IShop(shops[_shopId]).requestSale{
             value: _amount - ratingReward - serviceTax
         }(msg.sender, _productId, _publicKey);
@@ -349,11 +343,11 @@ contract Guild {
         buyerCredits[msg.sender] += ratingReward;
     }
 
-    function withdrawBalance(uint256 _shopId) external {
-        uint256 balance = getShopInfo(_shopId).shopBalance;
-        IShop(shops[_shopId]).withdrawBalance();
-        emit BalanceWithdrawn(_shopId, msg.sender, balance);
-    }
+    // function withdrawBalance(uint256 _shopId) external {
+    //     uint256 balance = getShopInfo(_shopId).shopBalance;
+    //     IShop(shops[_shopId]).withdrawBalance();
+    //     emit BalanceWithdrawn(_shopId, msg.sender, balance);
+    // }
 
     function completeUnlock(uint256 _requestId, string memory _unlockedLicense)
         external
@@ -382,6 +376,17 @@ contract Guild {
         uint256 _redeemCredits
     ) external payable {
         //require(msg.sender != IShop(shops[_shopId]).getOwner());
+
+        if (bytes(_publicKey).length == 0) {
+            require(
+                bytes(buyerPublicKeys[msg.sender]).length != 0,
+                "No public key found for this user"
+            );
+            _publicKey = buyerPublicKeys[msg.sender];
+        } else {
+            buyerPublicKeys[msg.sender] = _publicKey;
+        }
+
         uint256 availableAmount = msg.value;
         require(
             buyerCredits[msg.sender] >= _redeemCredits,
@@ -425,7 +430,7 @@ contract Guild {
     function getShopInfo(uint256 _shopId)
         public
         view
-        returns (IShop.ShopInfo memory)
+        returns (IShop.ShopInfo memory, IShop.Beneficiary[] memory)
     {
         return IShop(shops[_shopId]).getShopInfo();
     }
@@ -473,6 +478,7 @@ contract Guild {
         view
         returns (uint256)
     {
+        require(isShopNameTaken[_shopName], "Shop does not exist");
         return shopNameToShopId[_shopName];
     }
 

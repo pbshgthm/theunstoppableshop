@@ -30,8 +30,12 @@ contract UnlockOracleClient is ChainlinkClient {
     uint256 public requestsCount = 0;
     mapping(address => bool) memberGuild;
 
+    // original unlock oracle
     address oracle = 0x0bDDCD124709aCBf9BB3F824EbC61C87019888bb;
     bytes32 jobId = "c6a006e4f4844754a6524445acde84a0";
+
+    // address oracle = 0xc57B33452b4F7BB189bB5AfaE9cc4aBa1f7a4FD8;
+    // bytes32 jobId = "d5270d1c311941d0b08bead21fea7747";
     uint256 fee = 0.01 * 10**18;
     address linkTokenContract = 0x326C977E6efc84E512bB9C30f76E30c160eD06FB;
 

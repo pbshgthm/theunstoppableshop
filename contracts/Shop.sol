@@ -39,7 +39,6 @@ contract Shop {
         address guild;
         address owner;
         string detailsCId;
-        uint256 shopBalance;
         string shopName;
         uint256 productsCount;
         uint256 salesCount;
@@ -87,11 +86,11 @@ contract Shop {
         Beneficiary[] memory _beneficiaries
     ) {
         setBeneficiary(_beneficiaries);
+
         shopInfo = ShopInfo({
             guild: _guild,
             owner: _owner,
             detailsCId: _detailsCId,
-            shopBalance: 0,
             shopName: _shopName,
             productsCount: 0,
             salesCount: 0
@@ -212,13 +211,26 @@ contract Shop {
         sales[_saleId].unlockedLicense = _unlockedLicense;
         sales[_saleId].status = SaleStatus.Completed;
         products[sales[_saleId].productId].revenue += sales[_saleId].amount;
-        shopInfo.shopBalance += sales[_saleId].amount;
+        makePayout(sales[_saleId].amount);
 
         openSaleIds[openSaleIdToIndex[_saleId]] = openSaleIds[
             openSaleIds.length - 1
         ];
         openSaleIds.pop();
         delete openSaleIdToIndex[_saleId];
+        makePayout(sales[_saleId].amount);
+    }
+
+    function makePayout(uint256 amount) internal {
+        for (uint256 i = 0; i < beneficiaries.length; i++) {
+            uint256 beneficiaryCut = ((beneficiaries[i].share) * amount) / 100;
+            (bool success, ) = beneficiaries[i].addr.call{
+                value: beneficiaryCut
+            }("");
+
+            // works without require
+            // require(success, "Error on withdraw");
+        }
     }
 
     function addRating(uint256 _saleId, RatingOptions _rating)
@@ -256,18 +268,6 @@ contract Shop {
         require(totalShare == 100, "Total share must be 100%");
     }
 
-    function withdrawBalance() external {
-        uint256 shopBalance = shopInfo.shopBalance;
-
-        shopInfo.shopBalance = 0;
-        for (uint256 i = 0; i < beneficiaries.length; i++) {
-            uint256 amount = (beneficiaries[i].share * shopBalance) / 100;
-
-            (bool success, ) = beneficiaries[i].addr.call{value: amount}("");
-            require(success, "Error on withdraw");
-        }
-    }
-
     function getSale(uint256 _saleId) external view returns (Sale memory) {
         return sales[_saleId];
     }
@@ -280,8 +280,12 @@ contract Shop {
         return products[_productId];
     }
 
-    function getShopInfo() external view returns (ShopInfo memory) {
-        return shopInfo;
+    function getShopInfo()
+        external
+        view
+        returns (ShopInfo memory, Beneficiary[] memory)
+    {
+        return (shopInfo, beneficiaries);
     }
 
     function getOwner() external view returns (address) {
@@ -302,9 +306,5 @@ contract Shop {
 
     function getProducts() external view returns (Product[] memory) {
         return products;
-    }
-
-    function getBeneficiaries() external view returns (Beneficiary[] memory) {
-        return beneficiaries;
     }
 }
