@@ -10,9 +10,9 @@ import oracleABI from "../../hardhat/artifacts/contracts/UnlockOracleClient.sol/
 const rpcApi =
   "https://polygon-mumbai.g.alchemy.com/v2/9rE76R64EAB61z4CE3BTnMwza-7R4HiV";
 
-const oracleAddress = "0x80193Bd25C4f7EED4F05AAaee966F60c514c5034";
-const shopFactoryAddress = "0xC0aBE4b9C79559e6477FBf3b45693Aa25F51Fa5E";
-const guildAddress = "0x5276eadaa56C33B9b768357793FA1E6684242895";
+const oracleAddress = "0x3b7617D4f04DD706D5ff5d2FbE65Cef40eDa3479";
+const shopFactoryAddress = "0x57D55Aa0dD02d9FC9024DeC39623195eA688a01C";
+const guildAddress = "0x064e77648cDA31e46d4cA135012F0ea0735Aad2B";
 
 const provider = new ethers.providers.JsonRpcProvider(rpcApi);
 const guild = new ethers.Contract(guildAddress, guildABI.abi, provider);
