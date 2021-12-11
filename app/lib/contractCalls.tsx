@@ -60,30 +60,35 @@ export async function addProduct(
   console.log("Product added");
 }
 
-interface CartItems {
-  shopId: number;
-  productId: number;
-  amount: number;
-}
+// interface CartItems {
+//   shopId: number;
+//   productId: number;
+//   amount: number;
+// }
 
 export async function checkoutCart(
-  cartItems: CartItems[],
+  cartItems: any[],
   publicKey: string,
   redeemCredits: number,
-  totalAmount: number,
+  totalAmount: string,
   ethereum: ethers.providers.ExternalProvider
 ) {
+  console.log(cartItems);
   const signer = new ethers.providers.Web3Provider(ethereum).getSigner();
   const guild = new ethers.Contract(guildAddress, guildABI.abi, signer);
-  const cartItemsGuild = cartItems.map((item) => {
-    [item.shopId, item.productId, item.amount];
-  });
+  const cartItemsGuild = cartItems.map((item) => [
+    item.shopId,
+    item.productId,
+    ethers.utils.parseEther(item.amount),
+  ]);
+
+  console.log(cartItemsGuild, "cart items");
 
   const txn = await guild.checkoutCart(
     cartItemsGuild,
     publicKey,
     redeemCredits,
-    { value: totalAmount }
+    { value: ethers.utils.parseEther(totalAmount) }
   );
 
   await txn.wait();

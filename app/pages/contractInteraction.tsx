@@ -2,6 +2,7 @@ import type { NextPage } from "next";
 
 import { createShop, addProduct, checkoutCart } from "../lib/contractCalls";
 import { useMetaMask } from "metamask-react";
+import { ethers } from "ethers";
 
 function Login() {
   const { status, connect, account } = useMetaMask();
@@ -37,6 +38,25 @@ const appInfo: NextPage = () => {
 
       <br />
       <br />
+      <button
+        onClick={async () =>
+          await checkoutCart(
+            [
+              {
+                shopId: 0,
+                productId: 0,
+                amount: "0.001",
+              },
+            ],
+            "bW5KZDNRSWZFREIrcFlDOHJ2Nk55dTNvM3pqUnlCbHpDZ3dMb1pTQXBFRT0=",
+            0,
+            "0.001",
+            ethereum
+          )
+        }
+      >
+        Checkout Cart
+      </button>
       <br />
       <br />
     </div>
@@ -44,3 +64,27 @@ const appInfo: NextPage = () => {
 };
 
 export default appInfo;
+
+{
+  /* 
+ [[0, 0, ethers.utils.parseEther("0.0001")]],
+    "",
+    0,
+    { value: ethers.utils.parseEther("0.0001") } */
+}
+
+{
+  /* cartItems: CartItems[], */
+}
+{
+  /* publicKey: string, */
+}
+{
+  /* redeemCredits: number, */
+}
+{
+  /* totalAmount: number, */
+}
+{
+  /* ethereum: ethers.providers.ExternalProvider */
+}
