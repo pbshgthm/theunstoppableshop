@@ -1,17 +1,23 @@
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
-import { TextInput, TextArea, NumberInput, Checkbox } from '../../../components/Inputs'
+import { TextInput, TextArea, NumberInput, Toggle } from '../../../components/Inputs'
 import { FileUpload } from "../../../components/FileUpload"
 import Image from 'next/image'
 import Link from 'next/link'
 import { Spinner, Button } from '../../../components/UIComp'
 import { encryptFile, encryptStr, sendToEstuary, trimString, zipFiles } from '../../../lib/utils'
 import { useMetaMask } from 'metamask-react'
+import { useApiPublicKey, useCachedPublicKey, useShopId } from '../../../lib/contractHooks'
+import { addProduct } from '../../../lib/contractCalls'
 
 export default function AddProduct() {
   const router = useRouter()
   const { handle } = router.query
   const { account, ethereum } = useMetaMask()
+  const { data: shopId, error: shopIdError } = useShopId(handle as string)
+  const { data: cachedPubKey, error: cachedPubKeyError } = useCachedPublicKey(account)
+  const { data: apiPubKey, error: apiPubKeyError } = useApiPublicKey()
+
   const [name, setName] = useState<string>()
   const [description, setDescription] = useState<string>()
   const [price, setPrice] = useState<number>()
@@ -24,7 +30,7 @@ export default function AddProduct() {
   const [loadingMsg, setLoadingMsg] = useState<string>()
   const [errorMsg, setErrorMsg] = useState<string>("Mandatory Fields (*) are not filled")
 
-  const isValidProduct = account && name && description && price && preview?.length && files.length && (stock || unlimitedStock)
+  const isValidProduct = account && name && description && (price && price > 0) && preview?.length && files.length && (stock || unlimitedStock)
 
   const [license, setLicense] = useState<string>()
   const [sellerLicense, setSellerLicense] = useState<string>()
@@ -61,23 +67,22 @@ export default function AddProduct() {
 
   async function initAddProduct() {
     if (!isValidProduct) return
-    const productInfo = {
+    const productDesc = {
       name,
       description,
       preview: preview?.map(file => file.name)
     }
     setLoadingMsg("Upoading metadata to IPFS..")
 
-    const detailsJSON = new File([JSON.stringify(productInfo)], "productInfo.json")
+    const detailsJSON = new File([JSON.stringify(productDesc)], "productDesc.json")
     const detailsFiles = [...preview, detailsJSON]
 
-    const detailsFileName = `${handle}-${trimString(name, 5)}-product-info`
+    const detailsFileName = `${handle}-${trimString(name, 5)}-product-desc`
     const detailsZip = await zipFiles(detailsFiles, detailsFileName) as Blob
 
 
-    const infoResponse = await sendToEstuary(detailsZip, detailsFileName + '.zip')
+    const descResponse = await sendToEstuary(detailsZip, detailsFileName + '.zip')
     setLoadingMsg("Uploading encrypting files to IPFS..")
-    console.log(infoResponse.cid)
 
 
     const productFileName = `${handle}-${trimString(name, 5)}-files`
@@ -90,18 +95,30 @@ export default function AddProduct() {
     setLoadingMsg("Creating Contract..")
     console.log(productResponse.cid)
 
-    //need hook for getting oracle public key
-    const sellerPubKey = 'PWyjiFaFrCR7yobajKrt7K7vF7glH2UWzW/osqpv4Tc='
-    const oraclePubKey = 'N8Dux/ah3ee2dLjKUAHDQOJE5cXAC/WflFUF0UfUmGQ='
-
-    const lockedLicense = encryptStr(licenseKey, oraclePubKey)
-    const sellerLicense = encryptStr(licenseKey, sellerPubKey)
+    const lockedLicense = encryptStr(licenseKey, apiPubKey!)
+    const sellerLicense = encryptStr(licenseKey, cachedPubKey!)
 
     setSellerLicense(sellerLicense)
     setLockedLicense(lockedLicense)
 
     setLoadingMsg("")
 
+    const { success, error } = await addProduct(
+      shopId!,
+      [`${productResponse.cid},${descResponse.cid}`],
+      lockedLicense,
+      sellerLicense,
+      price.toString(),
+      unlimitedStock ? 4294967295 : stock!,
+      ethereum
+    )
+    if (success) {
+      setLoadingMsg("")
+      router.push(`/shops/${handle}`)
+    } else {
+      setLoadingMsg("")
+      setErrorMsg(error)
+    }
   }
 
   return (
@@ -120,15 +137,15 @@ export default function AddProduct() {
         <div className="flex flex-row text-gray-500 gap-3">
           <div className="text-sm w-32">Price *</div>
           <div>
-            <NumberInput placeHolder="0.000000 MATIC" setValue={setPrice} />
+            <NumberInput placeHolder="0.000000 MATIC" setValue={setPrice} isDecimal={true} />
             <div className="text-gray-400 text-sm mt-2">≈ {'$' + ((price || 0) / 50).toFixed(2)}</div>
           </div>
         </div>
         <div className="flex flex-row text-gray-500 gap-3">
           <div className="text-sm w-32">Supply *</div>
           <div>
-            <NumberInput placeHolder="Limited edition" setValue={setStock} isDecimal={false} isDisabled={unlimitedStock} value={unlimitedStock ? '∞' : '0'} />
-            <Checkbox label="Unlimited" checked={false} setValue={setUnlimitedStock} />
+            <NumberInput placeHolder="Limited edition" setValue={setStock} isDisabled={unlimitedStock} value={unlimitedStock ? '∞' : '0'} />
+            <Toggle label="Unlimited" checked={false} setValue={setUnlimitedStock} />
           </div>
         </div>
         <div className="flex flex-row text-gray-500 gap-3">

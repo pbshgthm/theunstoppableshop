@@ -5,10 +5,11 @@ import Image from "next/image"
 import { sendToEstuary, trimString, zipFiles } from "../../lib/utils"
 import { Button, Spinner } from "../../components/UIComp"
 import { useMetaMask } from "metamask-react"
-import { IBeneficiary, IShopInfo } from "../../lib/types"
+import { IBeneficiary, IShopDesc } from "../../lib/types"
 import { createShop } from "../../lib/contractCalls"
 import Router from 'next/router'
 import Link from "next/link"
+import { useCachedPublicKey } from "../../lib/contractHooks"
 
 
 const emptyBeneficiary: IBeneficiary = {
@@ -19,18 +20,21 @@ const emptyBeneficiary: IBeneficiary = {
 export default function CreateShop() {
 
   const { account, ethereum } = useMetaMask()
+  const { data: cachedPublicKey, error: cachedPublicKeyError } = useCachedPublicKey(account)
+
+
   const [handle, setHandle] = useState<string>()
   const [name, setName] = useState<string>()
   const [logo, setLogo] = useState<File>()
   const [tagline, setTagline] = useState<string>()
   const [description, setDescription] = useState<string>()
 
+
   const [website, setWebsite] = useState<string>()
   const [twitter, setTwitter] = useState<string>()
   const [discord, setDiscord] = useState<string>()
   const [youtube, setYoutube] = useState<string>()
   const [spotify, setSpotify] = useState<string>()
-
 
   const [loadingMsg, setLoadingMsg] = useState<string>("")
   const [errorMsg, setErrorMsg] = useState<string>("Mandatory Fields (*) are not filled")
@@ -71,14 +75,11 @@ export default function CreateShop() {
 
     if (!isValidShop) return
 
-    const shopInfo: IShopInfo = {
-      handle,
+    const shopDesc: IShopDesc = {
       name,
       tagline,
-      owner: account,
       logo: logo.name,
       description,
-      benificiaries: validBenificiaries,
       website,
       twitter,
       discord,
@@ -86,21 +87,32 @@ export default function CreateShop() {
       spotify
     }
 
-    const detailsFile = new File([JSON.stringify(shopInfo)], "shopInfo.json")
+    const detailsFile = new File([JSON.stringify(shopDesc)], "shopDesc.json")
     const allFiles = [logo, detailsFile]
 
-    const detailsFileName = `${handle}-shop-info`
+    const detailsFileName = `${handle}-shop-desc`
     const zipped = await zipFiles(allFiles, detailsFileName) as Blob
     setLoadingMsg("Upoading metadata to IPFS..")
 
     const response = await sendToEstuary(zipped, detailsFileName + '.zip')
     setLoadingMsg("Creating Contract..")
 
-    const { success, error } = await createShop(shopInfo.handle, response.cid, shopInfo.benificiaries, ethereum)
+    const ownerPublicKey = cachedPublicKey || ethereum.request({
+      method: 'eth_getEncryptionPublicKey',
+      params: [account]
+    })
+
+    const { success, error } = await createShop(
+      handle,
+      response.cid,
+      validBenificiaries,
+      ownerPublicKey,
+      ethereum
+    )
 
     if (success) {
       setLoadingMsg("")
-      Router.push(`/shops/${shopInfo.handle}`)
+      Router.push(`/shops/${handle}`)
     } else {
       setLoadingMsg("")
       setErrorMsg(error)
@@ -114,7 +126,7 @@ export default function CreateShop() {
         <div className="uppercase text-xs text-gray-400 my-2">Shop Information</div>
         <div className="flex flex-row text-gray-500 gap-3">
           <div className="text-sm w-32">Shop Handle *</div>
-          <TextInput placeholder={'A unique handle to your shop'} setValue={setHandle} />
+          <TextInput placeholder={'A unique handle to your shop'} setValue={setHandle} isAlpha={true} />
         </div>
         <div className="flex flex-row text-gray-500 gap-3">
           <div className="text-sm w-32">Shop Name *</div>

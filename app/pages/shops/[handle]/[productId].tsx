@@ -5,26 +5,12 @@ import { decryptFile, toDateString, trimHash, unPackIPFS } from '../../../lib/ut
 import { Button } from '../../../components/UIComp'
 import { useIPFS } from '../../../lib/miscHooks'
 import useAsyncEffect from 'use-async-effect'
-import { IProductInfo } from '../../../lib/types'
+import { IProductDesc, IProductInfo } from '../../../lib/types'
 import saveAs from 'file-saver'
 import { useMetaMask } from 'metamask-react'
+import { useProduct, useShop, useShopId } from '../../../lib/contractHooks'
 
-const infoCID = 'bafybeidx7vlklpvyperstm7i6dom75fpjjnrvkquxvenvj2esyvw662ofq'
-const fileCID = 'bafybeibpoxinslpetwvlfozfcecuvg7ul3jmdyf3dio2apzczsmkubvq6m'
-const lis = 'i1dt6xJfh/vSvb7edbh/N6hBUHEmodvs'
 const unlockedLic = '{"version":"x25519-xsalsa20-poly1305","nonce":"srgZhbx7J2aJwXxI/dIexY8dww8a7kiF","ephemPublicKey":"as9hcSNocFMwVsrsEebI1hpFNfpo2TEloownJUQq6Co=","ciphertext":"xGnm5gTBz5wdpW0nIkAE3FywmDVfKeHHSxFDxbzPo6y0+saARrLMA9evldJ7nk6p"}'
-
-const productSpecs = {
-  price: 0.2323232232,
-  stock: 100,
-  ratings: [12, 2, 16, 31],
-  totalRatings: 61,
-  saleCount: 23,
-  createdAt: 1639210756,
-  shopName: 'Universe',
-  shopOwner: '0xf9c03776f126Ed6E43fBD2714A4bD293ba5E3515'
-}
-
 
 function BuyerOptions() {
   return (
@@ -92,39 +78,47 @@ function DetailsBox({ title, infoList }: {
 export default function Product() {
   const router = useRouter()
   const { handle, productId } = router.query
+  const { data: shopId, error: shopIdError } = useShopId(handle as string)
+  const { data: shopInfo, error: shopInfoError } = useShop(shopId)
+  const { data: productInfo, error: productInfoError } = useProduct(
+    shopId,
+    parseInt(productId as string)
+  )
   const [currPreview, setCurrPreview] = useState<number>(0)
-  const [productInfo, setProductInfo] = useState<IProductInfo>()
+  const [productDesc, setProductDesc] = useState<IProductDesc>()
   const [previewStr, setPreviewStr] = useState<string[]>()
-  const { data: detailsIPFS, error: detailsIPFSError } = useIPFS(infoCID)
-  const { data: filesIPFS, error: filesIPFSError } = useIPFS(fileCID)
+
+  const { data: descIPFS, error: desscIPFSError } = useIPFS(productInfo?.detailsCID)
+  const { data: filesIPFS, error: filesIPFSError } = useIPFS(productInfo?.contentCID)
+
   const { ethereum, account } = useMetaMask()
 
   useAsyncEffect(async () => {
-    if (detailsIPFS) {
-      const infoFileDict = await unPackIPFS(detailsIPFS)
-      const productInfoJson = JSON.parse(await infoFileDict['productInfo.json'].text()) as IProductInfo
-      setProductInfo(productInfoJson)
+    if (descIPFS) {
+      const descFileDict = await unPackIPFS(descIPFS)
+      const productDescJson = JSON.parse(await descFileDict['productDesc.json'].text()) as IProductDesc
+      setProductDesc(productDescJson)
 
-      Promise.all(productInfoJson.preview.map(fileName => {
+      Promise.all(productDescJson.preview.map(fileName => {
         return (new Promise((resolve, reject) => {
           const reader = new FileReader()
           reader.onload = () => {
             resolve(reader.result as string)
           }
-          reader.readAsDataURL(infoFileDict[fileName])
+          reader.readAsDataURL(descFileDict[fileName])
         }))
       })).then(previewStr => {
         setPreviewStr(previewStr as string[])
       })
 
     }
-  }, [detailsIPFS])
+  }, [descIPFS])
 
   async function downloadFile() {
     if (filesIPFS) {
       const license = await ethereum.request({
         method: 'eth_decrypt',
-        params: [unlockedLic, account]
+        params: [productInfo?.sellerLicense, account]
       })
       const decrypted = await decryptFile(filesIPFS, license)
       saveAs(decrypted, `stuff.zip`)
@@ -132,7 +126,7 @@ export default function Product() {
   }
 
   return (
-    <div> {productInfo &&
+    <div> {productInfo && productDesc && shopInfo &&
       <div className="flex flex-row gap-24">
         <div className="w-[450px] ml-36 mt-8">
           <div className="border rounded-xl h-[600px]">
@@ -140,57 +134,57 @@ export default function Product() {
             }
           </div>
           <div className="flex flex-row gap-2 justify-center mt-4">
-            {productInfo.preview.map((x, i) => (
+            {productDesc.preview.map((x, i) => (
               <div className={`w-3 h-3 cursor-pointer hover:bg-purple-800 rounded-full border-[2px] ${i === currPreview ? 'border-purple-800 bg-purple-800' : 'border-white bg-gray-300'}`} key={`dot-${i}`} onClick={() => setCurrPreview(i)}></div>
             ))}
           </div>
         </div>
         <div className="mt-12 mb-24">
-          <div className="text-3xl text-gray-600 font-light">{productInfo.name}</div>
+          <div className="text-3xl text-gray-600 font-light">{productDesc.name}</div>
           <div className="my-2 text-gray-500">
-            {productSpecs.shopName}
+            {shopInfo.handle}
             <span className="text-gray-400 px-2">by</span>
             <span className="text-gray-400 font-mono">
-              {trimHash(productSpecs.shopOwner)}
+              {trimHash(shopInfo.owner)}
             </span>
           </div>
-          <div className="text-orange-800 my-4">{productSpecs.price.toFixed(4)} MATIC
+          <div className="text-orange-800 my-4">{productInfo.price.toFixed(4)} MATIC
             <span className="text-gray-400 ml-4">
-              ≈ {'$' + ((productSpecs.price || 0) / 50).toFixed(2)}
+              ≈ {'$' + ((productInfo.price || 0) / 50).toFixed(2)}
             </span>
           </div>
           <div>
-            {(productSpecs.stock > 999)
+            {(productInfo.stock < 4294967295)
               ?
               <div className="mb-2">
                 <span className="text-sm text-purple-800">LIMITED EDITION</span>
                 <span className="text-gray-500 text-sm ml-4">
-                  {productSpecs.stock - productSpecs.saleCount} of {productSpecs.stock} Available
+                  {productInfo.stock - productInfo.salesCount} of {productInfo.stock} Available
                 </span>
               </div>
               :
               <span className="text-gray-500 text-sm mr-4">
-                {productSpecs.saleCount} Sold
+                {productInfo.salesCount} Sold
               </span>
             }
             <span className="text-gray-400 text-sm">
-              Listed on {toDateString(productSpecs.createdAt, true)}
+              Listed on {toDateString(productInfo.creationTime, true)}
             </span>
           </div>
           <div className="flex flex-row gap-4 my-8 text-gray-400 text-xs items-center">
-            {productSpecs.ratings.map((rating, i) => (
+            {productInfo.ratingsPercent.map((rating, i) => (
               <div key={'rating-' + i} className="flex flex-row items-center">
-                <span className={`mr-1 ${Math.max(...productSpecs.ratings) === rating ? 'text-orange-800' : ''}`}>
-                  {Math.round(rating / productSpecs.totalRatings * 100)}%
+                <span className={`mr-1 ${Math.max(...productInfo.ratingsPercent) === rating ? 'text-orange-800' : ''}`}>
+                  {rating}%
                 </span>
-                <Image src={`/assets/rating_${i}.png`} width={24} height={24} objectFit="cover" alt="" className={`rounded-full ${Math.max(...productSpecs.ratings) === rating ? '' : 'grayscale'}`} />
+                <Image src={`/assets/rating_${i}.png`} width={24} height={24} objectFit="cover" alt="" className={`rounded-full ${Math.max(...productInfo.ratingsPercent) === rating ? '' : 'grayscale'}`} />
               </div>
             ))}
-            from {productSpecs.totalRatings} ratings
+            from {productInfo.ratingsCount} ratings
           </div>
           <DownloadOptions onClick={downloadFile} />
-          <DetailsBox infoList={sampleInfo} title="Product Details" />
-          <div className="text-sm w-[480px] text-gray-500 mt-8 leading-6">{productInfo.description}</div>
+          {false && <DetailsBox infoList={sampleInfo} title="Product Details" />}
+          <div className="text-sm w-[480px] text-gray-500 mt-8 leading-6">{productDesc.description}</div>
         </div>
       </div>
     }

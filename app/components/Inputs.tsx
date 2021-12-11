@@ -10,14 +10,19 @@ function onlyPercent(input: string,) {
 
 function onlyNumber(input: string, isDecimal: boolean) {
   const num = input.replace(/[^0-9.]/g, '')
-  return isDecimal ? num.replace(/\./g, '') : num
+  return isDecimal ? num : num.replace(/\./g, '')
 }
 
-export function TextInput({ placeholder, setValue, value, isDisabled }: {
+function onlyAlphabets(input: string) {
+  return input.replace(/[^a-zA-Z]/g, '')
+}
+
+export function TextInput({ placeholder, setValue, value, isDisabled, isAlpha }: {
   placeholder: string,
   setValue: (value: string) => void,
   value?: string,
-  isDisabled?: boolean
+  isDisabled?: boolean,
+  isAlpha?: boolean
 }) {
 
   const [currValue, setCurrValue] = useState(value || '')
@@ -33,7 +38,9 @@ export function TextInput({ placeholder, setValue, value, isDisabled }: {
         placeholder={placeholder}
         value={currValue}
         disabled={isDisabled}
-        onChange={(e) => { setCurrValue(e.target.value) }}
+        onChange={(e) => {
+          setCurrValue(isAlpha ? onlyAlphabets(e.target.value) : e.target.value)
+        }}
         className="block w-96 p-2 h-10 text-sm rounded-md outline-none bg-white border"
       />
     </div>
@@ -98,11 +105,11 @@ export function NumberInput({ placeHolder, setValue, value, isDisabled, isDecima
 
   const [currValue, setCurrValue] = useState(value || '0')
   useEffect(() => {
-    setValue(isDecimal ? parseFloat(currValue) : parseInt(currValue) || 0)
+    setValue(isDecimal ? parseFloat(currValue || '0') : parseInt(currValue || '0'))
   }, [currValue, isDecimal, setValue])
 
   useEffect(() => {
-    setCurrValue(value || '0')
+    setCurrValue(value || '')
   }, [value, setCurrValue])
 
   return (
@@ -145,7 +152,7 @@ export function TextArea({ placeholder, setValue, value, isDisabled }: {
   )
 }
 
-export function Checkbox({ label, setValue, checked }: {
+export function Toggle({ label, setValue, checked }: {
   label: string,
   checked: boolean,
   setValue: (checked: boolean) => void

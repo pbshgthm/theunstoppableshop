@@ -5,9 +5,9 @@ import Image from "next/image"
 
 
 const navUrls = [
-  ['/shops', 'Discover'],
+  ['/', 'Discover'],
   ['/myshops', 'My Shops'],
-  ['/', 'Library']
+  ['/upload', 'Library']
 ]
 
 export function Header() {

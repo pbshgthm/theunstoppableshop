@@ -1,4 +1,7 @@
+import { error } from "console"
 import { ShopPreview } from "../components/ShopPreview"
+import { useShopList } from "../lib/contractHooks"
+import Link from "next/link"
 
 const shop = {
   name: 'Milkyway Galaxy',
@@ -9,9 +12,18 @@ const shop = {
 const shopList = Array(25).fill(shop)
 
 export default function Index() {
+  const { data: shopList, error: shopError } = useShopList()
   return (
-    <div className="grid grid-cols-5 gap-4 w-[1200px] m-auto my-12">
-      {shopList.map(shop => (<ShopPreview shop={shop} key={shop.name} />))}
+    <div className="p-20">
+      {shopList?.map(shop => (
+        <Link href={`/shops/${shop.handle}`} key={shop.shopId}>
+          <a>
+            <div>
+              {shop.shopId} . {shop.handle}
+            </div>
+          </a>
+        </Link>
+      ))}
     </div>
   )
 }

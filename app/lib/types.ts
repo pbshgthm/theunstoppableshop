@@ -3,14 +3,11 @@ export interface IBeneficiary {
   share: number
 }
 
-export interface IShopInfo {
-  handle: string,
+export interface IShopDesc {
   name: string,
   tagline: string,
-  owner: string,
   logo: string,
   description: string,
-  benificiaries: IBeneficiary[],
   website?: string,
   twitter?: string,
   discord?: string,
@@ -18,8 +15,31 @@ export interface IShopInfo {
   spotify?: string
 }
 
-export interface IProductInfo {
+export interface IShopInfo {
+  shopId: number,
+  owner: string,
+  detailsCId: string,
+  handle: string,
+  benificiaries: IBeneficiary[],
+}
+
+export interface IProductDesc {
   name: string,
   description: string,
   preview: string[]
+}
+
+export interface IProductInfo {
+  productId: number,
+  contentCID: string,
+  detailsCID: string,
+  price: number,
+  stock: number,
+  salesCount: number,
+  totalRevenue: number,
+  creationTime: number,
+  ratingsPercent: number[],
+  ratingsCount: number,
+  isAvailable: boolean,
+  sellerLicense: string,
 }

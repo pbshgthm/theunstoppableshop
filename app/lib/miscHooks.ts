@@ -8,6 +8,6 @@ async function ipfsFetcher(fn: string, cid: string) {
 }
 
 export function useIPFS(cid: string | undefined) {
-  const { data, error } = useSWR(['useIPFS', cid], ipfsFetcher)
+  const { data, error } = useSWR(cid ? ['useIPFS', cid] : null, ipfsFetcher)
   return { data, error }
 }
