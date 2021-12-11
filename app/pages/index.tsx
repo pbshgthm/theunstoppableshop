@@ -1,59 +1,17 @@
-import type { NextPage } from 'next'
-import { useEvents, sendEther, sendLink, useLinkBalance } from '../lib/hooks'
-import { useMetaMask } from "metamask-react"
+import { ShopPreview } from "../components/ShopPreview"
 
-
-function Login() {
-
-  const { status, connect, account } = useMetaMask()
-
-  if (status === "initializing")
-    return <div>
-      syncing metamask...
-    </div>
-
-  if (status === "unavailable")
-    return <div>
-      metaMask not available
-    </div>
-
-  if (status === "notConnected")
-    return <button onClick={connect}>
-      connect to metamask
-    </button>
-
-  if (status === "connecting")
-    return <div>
-      connecting...
-    </div>
-
-  if (status === "connected")
-    return <div>
-      connected account: {account}
-    </div>
-
-  return null
+const shop = {
+  name: 'Milkyway Galaxy',
+  image: 'shop.png',
+  tags: ['Music', 'Books'],
+  owner: '0xf9c03776f126Ed6E43fBD2714A4bD293ba5E3515'
 }
+const shopList = Array(25).fill(shop)
 
-
-const Home: NextPage = () => {
-  const { status, connect, account, ethereum } = useMetaMask()
-  const { data: linkBalance } = useLinkBalance(account || "")
-  const { data: events } = useEvents(account || '')
-
+export default function Index() {
   return (
-    <div>
-      <Login />
-      <br /><br />
-      link Balance : {linkBalance}
-      <br /><br /><br />
-      <button onClick={() => { sendLink(ethereum) }}>send link</button>
-      <br /><br /><br />
-      <button onClick={() => { sendEther(ethereum) }}>send ether</button>
-      <br /><br /><br />
-      <pre>{JSON.stringify(events, null, 2)}</pre>
+    <div className="grid grid-cols-5 gap-4 w-[1200px] m-auto my-12">
+      {shopList.map(shop => (<ShopPreview shop={shop} key={shop.name} />))}
     </div>
   )
 }
-
-export default Home

@@ -98,6 +98,7 @@ function Render() {
     }
     getData()
   }, [files])
+
   async function getFiles() {
     const response = await getFromIPFS(cid)
     const unzipped = await unzip(await response.blob())

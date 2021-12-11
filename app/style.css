@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face {
+  font-family: 'Fira Code';
+  src: local('Fira Code'), url('/public/fonts/FiraCode-VariableFont_wght.ttf') format('ttf');
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: local('Inter'), url('/public/fonts/Inter-VariableFont_slnt,wght.ttf') format('ttf');
+}

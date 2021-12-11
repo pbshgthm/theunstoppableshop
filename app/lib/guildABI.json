@@ -1,0 +1,884 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_oracleClient",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_shopFactory",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "shopId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "productId",
+        "type": "uint256"
+      }
+    ],
+    "name": "ProductCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "shopId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "buyer",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "productId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "contentVersion",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "saleId",
+        "type": "uint256"
+      }
+    ],
+    "name": "RequestedSale",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "shopId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "ShopCreated",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_shopId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string[]",
+        "name": "_contentCID",
+        "type": "string[]"
+      },
+      {
+        "internalType": "string",
+        "name": "_lockedLicense",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_price",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_stock",
+        "type": "uint256"
+      }
+    ],
+    "name": "addProduct",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_shopId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_saleId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "enum IShop.RatingOptions",
+        "name": "_rating",
+        "type": "uint8"
+      }
+    ],
+    "name": "addRating",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "buyerCredits",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "buyerPublicKeys",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_oracle",
+        "type": "address"
+      }
+    ],
+    "name": "changeOracle",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "shopId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "productId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct Guild.CartItem[]",
+        "name": "_cartItems",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "string",
+        "name": "_publicKey",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_redeemCredits",
+        "type": "uint256"
+      }
+    ],
+    "name": "checkoutCart",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_requestId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "_unlockedLicense",
+        "type": "string"
+      }
+    ],
+    "name": "completeUnlock",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_shopName",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "_detailsCId",
+        "type": "string"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "addr",
+            "type": "address"
+          },
+          {
+            "internalType": "uint8",
+            "name": "share",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct IShop.Beneficiary[]",
+        "name": "_beneficiaries",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "createShop",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_shopId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getBeneficiaries",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "addr",
+            "type": "address"
+          },
+          {
+            "internalType": "uint8",
+            "name": "share",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct IShop.Beneficiary[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getGuildInfo",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_shopId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getOpenSaleIds",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_shopId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_productId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getProductInfo",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "string[]",
+            "name": "contentCID",
+            "type": "string[]"
+          },
+          {
+            "internalType": "string",
+            "name": "lockedLicense",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "price",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "stock",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "salesCount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "revenue",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "creationTime",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint32[4]",
+                "name": "ratingsCount",
+                "type": "uint32[4]"
+              }
+            ],
+            "internalType": "struct IShop.Ratings",
+            "name": "ratings",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bool",
+            "name": "isAvailable",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct IShop.Product",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_shopId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getProducts",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "string[]",
+            "name": "contentCID",
+            "type": "string[]"
+          },
+          {
+            "internalType": "string",
+            "name": "lockedLicense",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "price",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "stock",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "salesCount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "revenue",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "creationTime",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint32[4]",
+                "name": "ratingsCount",
+                "type": "uint32[4]"
+              }
+            ],
+            "internalType": "struct IShop.Ratings",
+            "name": "ratings",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bool",
+            "name": "isAvailable",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct IShop.Product[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_shopId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getProductsCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_shopId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_saleId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getRefund",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_shopId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_saleId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getSaleInfo",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "buyer",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "publicKey",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "productId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "saleDeadline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "unlockedLicense",
+            "type": "string"
+          },
+          {
+            "internalType": "enum IShop.RatingOptions",
+            "name": "rating",
+            "type": "uint8"
+          },
+          {
+            "internalType": "enum IShop.SaleStatus",
+            "name": "status",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct IShop.Sale",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getShopCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_shopName",
+        "type": "string"
+      }
+    ],
+    "name": "getShopIdFromHandle",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_shopId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getShopInfo",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "guild",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "owner",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "detailsCId",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "shopName",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "productsCount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "salesCount",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IShop.ShopInfo",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "name": "isShopNameTaken",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "requestIdToRequestIndex",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_newRatingReward",
+        "type": "uint256"
+      }
+    ],
+    "name": "setRatingReward",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_newServiceTax",
+        "type": "uint256"
+      }
+    ],
+    "name": "setServiceTax",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "shopFactory",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "name": "shopNameToShopId",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "shops",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_shopId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_productId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "_contentCID",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_price",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_stock",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "_isAvailable",
+        "type": "bool"
+      }
+    ],
+    "name": "updateProduct",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_shopId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "_detailsCId",
+        "type": "string"
+      }
+    ],
+    "name": "updateShopDetails",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
