@@ -13,6 +13,7 @@ import {
   useRecentSales,
   useApiPublicKey,
   useCachedPublicKey,
+  // useCachedPublicKey,
 } from "../lib/spiceHooks";
 import { createShop, addProduct } from "../lib/contractCalls";
 import { useMetaMask } from "metamask-react";
@@ -43,12 +44,12 @@ function Login() {
 
 const appInfo: NextPage = () => {
   const { status, connect, account, ethereum } = useMetaMask();
-  const { data: shopId, error: shopIdError } = useShopId("sushi");
+  const { data: shopId, error: shopIdError } = useShopId("universe");
   const { data: shopList } = getShopList();
 
-  const { data: shopData } = getShop(0);
-  const { data: productList } = getProductList(0);
-  const { data: productData } = getProduct(0, 0, 1);
+  const { data: shopData } = getShop(1);
+  const { data: productList } = getProductList(1);
+  const { data: productData } = getProduct(1, 0, 1);
   const { data: saleData } = getSale(
     0,
     0,

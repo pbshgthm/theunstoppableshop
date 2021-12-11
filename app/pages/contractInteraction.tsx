@@ -1,6 +1,6 @@
 import type { NextPage } from "next";
 
-import { createShop, addProduct } from "../lib/contractCalls";
+import { createShop, addProduct, checkoutCart } from "../lib/contractCalls";
 import { useMetaMask } from "metamask-react";
 
 function Login() {
@@ -30,25 +30,11 @@ const appInfo: NextPage = () => {
       <br />
 
       <br />
-      <button onClick={() => createShop("sush", "", [], ethereum)}>
-        createShop
-      </button>
+      <button>createShop</button>
       <br />
       <br />
-      <button
-        onClick={() =>
-          addProduct(
-            0,
-            ["added using button"],
-            "eyJ2ZXJzaW9uIjoieDI1NTE5LXhzYWxzYTIwLXBvbHkxMzA1Iiwibm9uY2UiOiIzMVFySGxTbWY2SGRXZFJtc2pVMjEvN1RrTmsxNlJJeSIsImVwaGVtUHVibGljS2V5IjoiTk9xY2hOWWF1dk1pVFhQRytyeUpreGhybVdEV3RQTjdXMEJKR1JtQUdCVT0iLCJjaXBoZXJ0ZXh0IjoibjZhL2hwUFBOaFppWHJWUjcrQmhNUVdtQTROUmdHUHZVSnYzS1FoWExZeGJ4T2E0N2p1UHdEMVdtU0tXSThDQiJ9",
-            "0.01",
-            100,
-            ethereum
-          )
-        }
-      >
-        Add product
-      </button>
+      {/* <button onClick={checkoutCart}>Checkout Cart</button> */}
+
       <br />
       <br />
       <br />

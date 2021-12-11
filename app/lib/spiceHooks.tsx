@@ -12,10 +12,12 @@ const rpcApi =
 
 const oracleAddress = "0xA7c7a31fa9466ec666870e2306ABd5fA621f9f1a";
 const shopFactoryAddress = "0x89361E2e23fC7100eff28cC41f09cd8B09aA748F";
-const guildAddress = "0x10c24Aa930564D2f8431400665A3216FFe4C03DA";
+const guildAddress = "0x94DA5C068e17388aB9B447862dFb0D8A708D2FBD";
 
 const provider = new ethers.providers.JsonRpcProvider(rpcApi);
 const guild = new ethers.Contract(guildAddress, guildABI.abi, provider);
+const multiguild = new Contract(guildAddress, guildABI.abi);
+const ethcallProvider = new Provider(provider, 80001);
 
 // owner, oracleClient, shopFactory, ratingReward, serviceTax;
 
@@ -261,12 +263,9 @@ export function getBuyerSales(buyerAddress: string) {
 }
 
 async function multicallProductInfo(productDeets: ProductDeets[]) {
-  const multiguild = new Contract(guildAddress, guildABI.abi);
-
   async function call() {
-    const ethcallProvider = new Provider(provider);
+    const ethcallProvider = new Provider(provider, 80001);
 
-    await ethcallProvider.init(); // Only required when `chainId` is not provided in the `Provider` constructor
     const productInfoCalls = [];
 
     for (let key in productDeets) {
@@ -288,11 +287,8 @@ async function multicallProductInfo(productDeets: ProductDeets[]) {
 }
 
 async function multicallSaleInfo(saleDeets: SaleDeets[]) {
-  const multiguild = new Contract(guildAddress, guildABI.abi);
-
   async function call() {
-    const ethcallProvider = new Provider(provider);
-    await ethcallProvider.init(); // Only required when `chainId` is not provided in the `Provider` constructor
+    const ethcallProvider = new Provider(provider, 80001);
     const saleInfoCalls = [];
 
     for (const sale in saleDeets) {
@@ -468,5 +464,19 @@ export function useCachedPublicKey(address: string) {
   };
 
   const { data, error } = useSWR(["useCachedPublicKey", address], fetcher);
+  return { data, error };
+}
+
+export function useProductInfo(productDeets: ProductDeets[]) {
+  async function fetcher(fn: string, productDeets: ProductDeets[]) {
+    const productInfoCalls = productDeets.map((productDeet) =>
+      multiguild.getProductInfo(productDeet.shopId, productDeet.productId)
+    );
+
+    const productInfos = await ethcallProvider.all(productInfoCalls);
+
+    return productInfos;
+  }
+  const { data, error } = useSWR(["useProductInfo", productDeets], fetcher);
   return { data, error };
 }
