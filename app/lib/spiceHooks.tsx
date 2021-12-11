@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { Contract, Provider } from "ethers-multicall";
 import useSWR from "swr";
-import { SaleDeets, ProductDeets } from "./interfaces";
+import { SaleDeets, ProductDeets, swrKeys } from "./interfaces";
 
 import guildABI from "../../hardhat/artifacts/contracts/Guild.sol/Guild.json";
 import shopFactoryABI from "../../hardhat/artifacts/contracts/ShopFactory.sol/ShopFactory.json";
@@ -10,12 +10,40 @@ import oracleABI from "../../hardhat/artifacts/contracts/UnlockOracleClient.sol/
 const rpcApi =
   "https://polygon-mumbai.g.alchemy.com/v2/9rE76R64EAB61z4CE3BTnMwza-7R4HiV";
 
-const oracleAddress = "0x3b7617D4f04DD706D5ff5d2FbE65Cef40eDa3479";
-const shopFactoryAddress = "0x57D55Aa0dD02d9FC9024DeC39623195eA688a01C";
-const guildAddress = "0x064e77648cDA31e46d4cA135012F0ea0735Aad2B";
+const oracleAddress = "0xA7c7a31fa9466ec666870e2306ABd5fA621f9f1a";
+const shopFactoryAddress = "0x89361E2e23fC7100eff28cC41f09cd8B09aA748F";
+const guildAddress = "0x10c24Aa930564D2f8431400665A3216FFe4C03DA";
 
 const provider = new ethers.providers.JsonRpcProvider(rpcApi);
 const guild = new ethers.Contract(guildAddress, guildABI.abi, provider);
+
+// owner, oracleClient, shopFactory, ratingReward, serviceTax;
+
+// address buyer;
+// string publicKey;
+// uint256 productId;
+// uint256 amount;
+// uint256 saleDeadline;
+// string unlockedLicense;
+// RatingOptions rating;
+// SaleStatus status;
+
+// string[] contentCID;
+// string lockedLicense;
+// uint256 price;
+// uint256 stock;
+// uint256 salesCount;
+// uint256 revenue;
+// uint256 creationTime;
+// Ratings ratings;
+// bool isAvailable;
+
+// export const fetcher = async (args: [string, any]) => {
+//   if (args[0] === swrKeys.useShopId) {
+//     const shopId = await guild.getShopIdFromHandle();
+//     return parseInt(shopId);
+//   }
+// };
 
 export function useShopId(shopName: string | undefined) {
   const fetcher = async (fn: string, shopName: string | undefined) => {
@@ -38,9 +66,9 @@ export function getShopList() {
     );
     const shopInfos = rawShopInfos.map((rawShopInfo, index) => ({
       shopId: index,
-      shopOwner: rawShopInfo[1],
-      detailsCId: rawShopInfo[2],
-      shopName: rawShopInfo[3],
+      shopOwner: rawShopInfo[0][1],
+      detailsCId: rawShopInfo[0][2],
+      shopName: rawShopInfo[0][3],
     }));
 
     return shopInfos;
@@ -74,7 +102,7 @@ async function multicallShopInfo(shopIds: number[]) {
 export function getShop(shopId: number) {
   const fetcher = async () => {
     const rawShopInfo = await guild.getShopInfo(shopId);
-    const beneficiaries = await guild.getBeneficiaries(shopId);
+
     // address guild;
     // address owner;
     // string detailsCId;
@@ -82,10 +110,10 @@ export function getShop(shopId: number) {
     // uint256 productsCount;
     // uint256 salesCount;
     const shopInfos = {
-      shopOwner: rawShopInfo[1],
-      detailsCId: rawShopInfo[2],
-      beneficiaries: beneficiaries,
-      productsCount: parseInt(rawShopInfo[4]),
+      shopOwner: rawShopInfo[0][1],
+      detailsCId: rawShopInfo[0][2],
+      beneficiaries: rawShopInfo[1],
+      productsCount: parseInt(rawShopInfo[0][4]),
     };
 
     return shopInfos;
@@ -191,24 +219,6 @@ async function getSaleId(
     )
     .then((logs) => logs.map((log) => parseInt(log.args.saleId)));
 }
-// address buyer;
-// string publicKey;
-// uint256 productId;
-// uint256 amount;
-// uint256 saleDeadline;
-// string unlockedLicense;
-// RatingOptions rating;
-// SaleStatus status;
-
-// string[] contentCID;
-// string lockedLicense;
-// uint256 price;
-// uint256 stock;
-// uint256 salesCount;
-// uint256 revenue;
-// uint256 creationTime;
-// Ratings ratings;
-// bool isAvailable;
 
 export function getBuyerSales(buyerAddress: string) {
   const fetcher = async () => {
@@ -330,7 +340,7 @@ async function getBuyerSaleDeets(buyerAddress: string) {
 
 async function getShopOwner(shopId: number) {
   const shopInfo = await guild.getShopInfo(shopId);
-  return shopInfo[1];
+  return shopInfo[0][1];
 }
 
 export function useOwnerShopInfo(owner: string | undefined) {
@@ -339,11 +349,10 @@ export function useOwnerShopInfo(owner: string | undefined) {
     const shopInfoRaw = await multicallShopInfo(shopIds);
     const OwnerShopInfo = shopInfoRaw.map((shopInfoRaw, index) => ({
       shopId: shopIds[index],
-      shopOwner: shopInfoRaw[1],
-      detailsCID: shopInfoRaw[2],
-      shopName: shopInfoRaw[3],
+      shopOwner: shopInfoRaw[0][1],
+      detailsCID: shopInfoRaw[0][2],
+      shopName: shopInfoRaw[0][3],
     }));
-    console.log("shopIds", shopIds);
 
     return OwnerShopInfo;
   };
@@ -373,7 +382,6 @@ async function getOwnerShops(buyerAddress: string) {
     )
     .then((logs) => logs.map((log) => parseInt(log.args.shopId)));
 }
-// owner, oracleClient, shopFactory, ratingReward, serviceTax;
 
 export function useGuildInfo() {
   const fetcher = async (fn: string) => {
@@ -441,4 +449,24 @@ async function getRecentSaleIds(shopId: number) {
       logs.map((logs) => IGuild.parseLog(logs))
     )
     .then((logs) => logs.map((log) => parseInt(log.args.saleId)));
+}
+
+export function useApiPublicKey() {
+  const fetcher = async (fn: string) => {
+    const apiPublicKey = await guild.getApiPublicKey();
+    return apiPublicKey;
+  };
+
+  const { data, error } = useSWR(["getApiPublicKey"], fetcher);
+  return { data, error };
+}
+
+export function useCachedPublicKey(address: string) {
+  const fetcher = async (fn: string, address: string) => {
+    const publicKey = await guild.publicKeys(address);
+    return publicKey as string;
+  };
+
+  const { data, error } = useSWR(["useCachedPublicKey", address], fetcher);
+  return { data, error };
 }

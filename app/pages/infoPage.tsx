@@ -11,6 +11,8 @@ import {
   useOwnerShopInfo,
   useGuildInfo,
   useRecentSales,
+  useApiPublicKey,
+  useCachedPublicKey,
 } from "../lib/spiceHooks";
 import { createShop, addProduct } from "../lib/contractCalls";
 import { useMetaMask } from "metamask-react";
@@ -64,7 +66,12 @@ const appInfo: NextPage = () => {
 
   const { data: recentSales, error: recentSalesError } = useRecentSales(0);
 
-  // console.log(blocknum);
+  const { data: apiPublicKey, error: apiError } = useApiPublicKey();
+
+  const { data: cachedPublicKey, error: cachedError } = useCachedPublicKey(
+    "0xDa69589145AEBaa0cDae6dAC6512Db0363F44B70"
+  );
+  console.log("Existing", cachedPublicKey);
 
   // async function getShopData() {
   //   const saleIds = useRecentSales(0);
