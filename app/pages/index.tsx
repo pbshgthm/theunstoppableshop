@@ -15,7 +15,7 @@ export default function Index() {
         <Link href="/discover">
           <a><Button text="Discover" isPrimary={true} /></a>
         </Link>
-        <Link href="/discover">
+        <Link href="/myshops/create">
           <a><Button text="Create Shop" /></a>
         </Link>
       </div>
