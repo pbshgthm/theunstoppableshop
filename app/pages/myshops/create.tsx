@@ -120,7 +120,7 @@ export default function CreateShop() {
   }
 
   return (
-    <div className="w-[540px] m-auto my-12">
+    <div className="w-[540px] m-auto my-24">
       <div className="text-2xl pl-4 mb-4 text-gray-600">Create Shop</div>
       <div className="p-4 flex flex-col gap-4">
         <div className="uppercase text-xs text-gray-400 my-2">Shop Information</div>

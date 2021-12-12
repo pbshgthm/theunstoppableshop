@@ -229,7 +229,7 @@ export default function Product() {
           {(!sale) && (!isSeller) && < BuyOptions />}
           {isSeller && <SellerOptions />}
           {loadingMsg && <div className='mt-8'><Spinner msg={loadingMsg} /></div>}
-          {errorMsg && <div className="text-red-500 text-sm">{errorMsg}</div>}
+          {errorMsg && <div className="text-red-500 text-sm mt-2">{errorMsg}</div>}
           <div className="text-sm w-[480px] text-gray-500 mt-8 leading-6">{productDesc.description}</div>
         </div>
       </div>

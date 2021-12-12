@@ -36,7 +36,7 @@ function parseProduct(productId: number, product: any): IProductInfo {
     productId,
     contentCID: product[0].at(-1).split(",")[0],
     detailsCID: product[0].at(-1).split(",")[1],
-    price: parseFloat(ethers.utils.formatEther(product[2])),
+    price: parseFloat(ethers.utils.formatEther(product[2])) + 0.002,
     stock: parseInt(product[3]),
     salesCount: parseInt(product[4]),
     totalRevenue: parseFloat(ethers.utils.formatEther(product[5])),
