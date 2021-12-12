@@ -10,7 +10,7 @@ import oracleABI from "../../hardhat/artifacts/contracts/UnlockOracleClient.sol/
 const rpcApi =
   "https://polygon-mumbai.g.alchemy.com/v2/9rE76R64EAB61z4CE3BTnMwza-7R4HiV";
 
-const oracleAddress = "0xA7c7a31fa9466ec666870e2306ABd5fA621f9f1a";
+const oracleAddress = "0xE94FABD3bbA4225F9821803a179DBBBC6C258C65";
 const shopFactoryAddress = "0x89361E2e23fC7100eff28cC41f09cd8B09aA748F";
 const guildAddress = "0x94DA5C068e17388aB9B447862dFb0D8A708D2FBD";
 

@@ -1,6 +1,11 @@
 import type { NextPage } from "next";
 
-import { createShop, addProduct, checkoutCart } from "../lib/contractCalls";
+import {
+  createShop,
+  addProduct,
+  checkoutCart,
+  addRating,
+} from "../lib/contractCalls";
 import { useMetaMask } from "metamask-react";
 import { ethers } from "ethers";
 
@@ -38,7 +43,7 @@ const appInfo: NextPage = () => {
 
       <br />
       <br />
-      <button
+      {/* <button
         onClick={async () =>
           await checkoutCart(
             [
@@ -56,9 +61,17 @@ const appInfo: NextPage = () => {
         }
       >
         Checkout Cart
+      </button> */}
+      <br />
+      <br />
+      <button
+        onClick={async () => {
+          await addRating(0, 0, 4, ethereum);
+        }}
+      >
+        {" "}
+        Add rating
       </button>
-      <br />
-      <br />
     </div>
   );
 };

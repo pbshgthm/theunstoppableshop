@@ -94,3 +94,16 @@ export async function checkoutCart(
   await txn.wait();
   console.log("Cart checked out");
 }
+
+export async function addRating(
+  shopId: number,
+  productId: number,
+  rating: number,
+  ethereum: ethers.providers.ExternalProvider
+) {
+  const signer = new ethers.providers.Web3Provider(ethereum).getSigner();
+  const guild = new ethers.Contract(guildAddress, guildABI.abi, signer);
+  const txn = await guild.addRating(shopId, productId, rating);
+  await txn.wait();
+  console.log("Rating added");
+}
