@@ -1,8 +1,8 @@
 import { useRouter } from 'next/router'
 import Image from 'next/image'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { decryptFile, toDateString, trimHash, unPackIPFS } from '../../../lib/utils'
-import { Button } from '../../../components/UIComp'
+import { Button, Spinner } from '../../../components/UIComp'
 import { useIPFS } from '../../../lib/miscHooks'
 import useAsyncEffect from 'use-async-effect'
 import { ICart, IProductDesc } from '../../../lib/types'
@@ -12,7 +12,7 @@ import { useCachedPublicKey, useProduct, useShop, useShopId, useSale } from '../
 import { checkoutCart } from '../../../lib/contractCalls'
 
 
-function DownloadOptions({ onClick }: { onClick: () => void }) {
+function PostSaleOptions({ onClick }: { onClick: () => void }) {
   const ratingList = new Array(4).fill(0)
   const [rating, setRating] = useState(0)
 
@@ -22,7 +22,7 @@ function DownloadOptions({ onClick }: { onClick: () => void }) {
         <Button text="Download" isPrimary={true} onClick={onClick} />
         <div className="text-gray-500 text-xs">You’ve purchased this product</div>
       </div>
-      <div className="flex flex-row gap-1 mt-3 items-center">
+      <div className="flex flex-row gap-1 mt-3 ml-1 items-center">
         {ratingList.map((_, i) => (
           <Image key={'rating-' + i} src={`/assets/rating_${i}.png`} width={24} height={24} alt="" className={`rounded-full cursor-pointer hover:grayscale-0 ${rating === i ? '' : 'grayscale'}`} onClick={() => setRating(i)} />
         ))}
@@ -72,7 +72,7 @@ export default function Product() {
   const { ethereum, account } = useMetaMask()
   const { data: shopId, error: shopIdError } = useShopId(handle as string)
   const { data: shopInfo, error: shopInfoError } = useShop(shopId)
-  const { data: publicKey, error: publicKeyError } = useCachedPublicKey(account)
+  const { data: cachedPublicKey, error: cachedPubilcKey } = useCachedPublicKey(account)
   const { data: sale, error: saleError } = useSale(
     shopId,
     parseInt(productId as string),
@@ -87,7 +87,10 @@ export default function Product() {
   const [productDesc, setProductDesc] = useState<IProductDesc>()
   const [previewStr, setPreviewStr] = useState<string[]>()
 
-  const { data: descIPFS, error: desscIPFSError } = useIPFS(productInfo?.detailsCID)
+  const [loadingMsg, setLoadingMsg] = useState<string>()
+  const [errorMsg, setErrorMsg] = useState<string>()
+
+  const { data: descIPFS, error: descIPFSError } = useIPFS(productInfo?.detailsCID)
   const { data: filesIPFS, error: filesIPFSError } = useIPFS(productInfo?.contentCID)
 
   useAsyncEffect(async () => {
@@ -120,6 +123,13 @@ export default function Product() {
     )
   }
 
+  useEffect(() => {
+    if (sale) {
+      setLoadingMsg('')
+      setErrorMsg('')
+    }
+  }, [sale])
+
   async function downloadFile() {
     if (filesIPFS && sale) {
       const license = await ethereum.request({
@@ -137,17 +147,27 @@ export default function Product() {
       productId: parseInt(productId as string),
       price: productInfo?.price as number,
     }
-
-    await checkoutCart(
+    setLoadingMsg('Requesting Product..')
+    const buyerPublicKey = cachedPublicKey || await ethereum.request({
+      method: 'eth_getEncryptionPublicKey',
+      params: [account]
+    })
+    const { success, error } = await checkoutCart(
       [cartItem],
-      Buffer.from(publicKey as string).toString('base64'),
+      Buffer.from(buyerPublicKey as string).toString('base64'),
       0,
       ethereum
     )
+    if (success) {
+
+    } else {
+      setLoadingMsg("")
+      setErrorMsg(error)
+    }
   }
 
   return (
-    <div> {productInfo && productDesc && shopInfo && publicKey &&
+    <div> {productInfo && productDesc && shopInfo &&
       <div className="flex flex-row gap-24">
         <div className="w-[450px] ml-36 mt-8">
           <div className="border rounded-xl h-[600px]">
@@ -203,8 +223,10 @@ export default function Product() {
             ))}
             from {productInfo.ratingsCount} ratings
           </div>
-          {sale && <DownloadOptions onClick={downloadFile} />}
+          {sale && <PostSaleOptions onClick={downloadFile} />}
           {(!sale) && <BuyerOptions />}
+          {loadingMsg && <div className='mt-8'><Spinner msg={loadingMsg} /></div>}
+          {errorMsg && <div className="text-red-500 text-sm">{errorMsg}</div>}
           {false && <DetailsBox infoList={sampleInfo} title="Product Details" />}
           <div className="text-sm w-[480px] text-gray-500 mt-8 leading-6">{productDesc.description}</div>
         </div>

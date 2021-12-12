@@ -8,6 +8,8 @@ import { useProductList, useShop, useShopId } from "../../../lib/contractHooks"
 import { useRouter } from "next/router"
 import { Button } from "../../../components/UIComp"
 import Link from "next/link"
+import { useMetaMask } from "metamask-react"
+import { ProductPreview } from "../../../components/ProductPreview"
 
 
 function SocialIcon({ name, link }: { name: string, link: string }) {
@@ -33,7 +35,7 @@ export default function Shop() {
   const [detailsCID, setDetailsCID] = useState<string>()
   const { data: ipfsObject, error } = useIPFS(detailsCID)
   const { data: productList, error: productListError } = useProductList(shopId)
-
+  const { account } = useMetaMask()
 
   const [logo, setLogo] = useState<string>()
   const [shopDesc, setShopDesc] = useState<IShopDesc>()
@@ -85,18 +87,24 @@ export default function Shop() {
               </div>
             </div>
             <div className="my-4">
-              <div className="text-2xl text-purple-800 my-1">{122}</div>
+              <div className="text-2xl text-purple-800 my-1">
+                {productList?.reduce((acc, cur) => acc + cur.totalRevenue, 0)}
+              </div>
               <div className="text-sm text-gray-500 my-1">MATIC earned from</div>
-              <div className="text-sm text-purple-800 my-1">2345 sales</div>
+              <div className="text-sm text-purple-800 my-1">
+                {shopInfo.salesCount} sales
+              </div>
             </div>
-            <div className="flex flex-row gap-2 self-center mt-4">
-              <Button text="Edit Shop" />
-              <Link href={`/shops/${handle}/add`}>
-                <a>
-                  <Button text="Add product" isPrimary={true} />
-                </a>
-              </Link>
-            </div>
+            {(shopInfo.owner.toLowerCase() === account?.toLocaleLowerCase()) &&
+              <div className="flex flex-row gap-2 self-center mt-4">
+                <Button text="Edit Shop" />
+                <Link href={`/shops/${handle}/add`}>
+                  <a>
+                    <Button text="Add product" isPrimary={true} />
+                  </a>
+                </Link>
+              </div>
+            }
           </div>
           <div className="ml-[550px] mt-12 w-[550px]">
             <div className="text-2xl text-gray-600 font-light">
@@ -122,14 +130,9 @@ export default function Shop() {
               Products
               <div className="ml-4 mt-1 w-56 h-[1px] bg-orange-800"></div>
             </div>
-            <div>
-              {productList && productList.map((product, i) => (
-                <Link href={`/shops/${handle}/${product.productId}`} key={'product-' + i}>
-                  <a>
-                    <div className="flex flex-col gap-2 mt-4">
-                      Product #{product.productId}
-                    </div>
-                  </a>
+            <div className="flex flex-col gap-8 my-12">
+              {productList && productList.map((productInfo, i) => (
+                <Link href={`/shops/${handle}/${productInfo.productId}`} key={`p-${i}`}><a><ProductPreview productInfo={productInfo} /></a>
                 </Link>
               ))}
             </div>

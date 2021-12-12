@@ -13,17 +13,18 @@ const multiGuild = new Contract(config.guildAddress, guildABI)
 const IGuild = new ethers.utils.Interface(guildABI)
 
 
-function parseShop(shopId: number, shop: any, benificiaries: any[]) {
+function parseShop(shopId: number, shop: any, benificiaries: any[]): IShopInfo {
   return {
     shopId,
     owner: shop[1],
     detailsCId: shop[2],
     handle: shop[3],
     productsCount: parseInt(shop[4]),
+    salesCount: parseInt(shop[5]),
     benificiaries: benificiaries.map((x: any) => (
       { address: x[0], share: parseInt(x[1]) }
     ))
-  } as IShopInfo
+  }
 }
 
 
@@ -50,7 +51,7 @@ function parseProduct(productId: number, product: any): IProductInfo {
   }
 }
 
-function parseSale(saleId: number, sale: any) {
+function parseSale(saleId: number, sale: any): ISaleInfo {
   return {
     saleId,
     buyer: sale[0],
@@ -60,7 +61,7 @@ function parseSale(saleId: number, sale: any) {
     unlockedLicense: sale[5],
     rating: sale[6],
     status: sale[7],
-  } as ISaleInfo
+  }
 }
 
 export function useShopId(shopHandle: string | undefined) {

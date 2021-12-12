@@ -85,14 +85,6 @@ export async function checkoutCart(
     ethers.utils.parseEther(item.price.toString()),
   ])
   const cartAmount = cartItems.reduce((acc, item) => acc + item.price, 0)
-  const txn = await guild.checkoutCart(
-    cartItemsGuild,
-    publicKey,
-    redeemCredits,
-    { value: ethers.utils.parseEther(cartAmount.toString()) }
-  )
-
-
   try {
     const txn = await guild.checkoutCart(
       cartItemsGuild,

@@ -20,7 +20,9 @@ export interface IShopInfo {
   owner: string,
   detailsCId: string,
   handle: string,
-  benificiaries: IBeneficiary[]
+  benificiaries: IBeneficiary[],
+  productsCount: number,
+  salesCount: number,
 }
 
 export interface IProductDesc {
