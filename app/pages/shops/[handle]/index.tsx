@@ -67,7 +67,7 @@ export default function Shop() {
           <div className="flex flex-col p-4 text-center gap-3 rounded-xl w-64 fixed left-24 top-24">
             {logo && <Image src={logo as string} width={232} height={232} alt={''} className="rounded-xl mb-2" objectFit="cover" />}
             <div className="flex flex-col gap-2">
-              <div>#{shopId}</div>
+              <div className="mt-2 text-sm text-gray-400">@{shopInfo.handle}</div>
               <div className="text-2xl text-gray-600 font-light">
                 {shopDesc.name}
               </div>
@@ -97,7 +97,6 @@ export default function Shop() {
             </div>
             {(shopInfo.owner.toLowerCase() === account?.toLocaleLowerCase()) &&
               <div className="flex flex-row gap-2 self-center mt-4">
-                <Button text="Edit Shop" />
                 <Link href={`/shops/${handle}/add`}>
                   <a>
                     <Button text="Add product" isPrimary={true} />
@@ -106,7 +105,7 @@ export default function Shop() {
               </div>
             }
           </div>
-          <div className="ml-[550px] mt-12 w-[550px]">
+          <div className="ml-[550px] w-[550px] mt-28">
             <div className="text-2xl text-gray-600 font-light">
               {shopDesc.tagline}
             </div>
@@ -131,15 +130,16 @@ export default function Shop() {
               <div className="ml-4 mt-1 w-56 h-[1px] bg-orange-800"></div>
             </div>
             <div className="flex flex-col gap-8 my-12">
-              {productList && productList.map((productInfo, i) => (
-                <Link href={`/shops/${handle}/${productInfo.productId}`} key={`p-${i}`}><a><ProductPreview productInfo={productInfo} /></a>
+              {productList && productList.reverse().map((productInfo, i) => (
+                <Link href={`/shops/${handle}/${productInfo.productId}`} key={`p-${i}`}>
+                  <a><ProductPreview productInfo={productInfo} /></a>
                 </Link>
               ))}
             </div>
           </div>
         </div>
       )}
-      {!shopDesc && <div>Loading...</div>}
+      {!shopDesc}
     </div>
   )
 }

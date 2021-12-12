@@ -108,3 +108,16 @@ export async function checkoutCart(
   }
 
 }
+
+export async function addRating(
+  shopId: number,
+  saleId: number,
+  rating: number,
+  ethereum: ethers.providers.ExternalProvider
+) {
+  const signer = new ethers.providers.Web3Provider(ethereum).getSigner()
+  const guild = new ethers.Contract(config.guildAddress, guildABI, signer)
+  const txn = await guild.addRating(shopId, saleId, rating)
+  await txn.wait()
+  console.log("Rating added")
+}

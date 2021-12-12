@@ -60,5 +60,5 @@ export interface ISaleInfo {
   saleDeadline: number,
   unlockedLicense: string,
   rating: number,
-  status: string,
+  status: number,
 }

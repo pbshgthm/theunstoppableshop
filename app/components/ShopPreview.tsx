@@ -26,17 +26,18 @@ export function ShopPreview({ shopInfo }: {
     }
   }, [ipfsObject])
   return (
-    <div>
+    <div className="w-[220px]">
       {shopDesc && (
-        <div className="flex flex-col hover:bg-purple-50 p-4 text-center gap-4 rounded-xl">
+        <div className="flex flex-col hover:bg-purple-50 p-4 text-center gap-2 rounded-xl">
           <div>
             {logo && <Image src={logo} width={180} height={180} alt={shopDesc.name} className="rounded-xl" />}
           </div>
+          <div className="mt-2 text-sm text-gray-400">@{shopInfo.handle}</div>
           <div className="text-xl text-gray-600">{shopDesc.name}</div>
-          <div className="text-sm text-gray-500 font-mono">
+          <div className="text-sm text-purple-800 font-mono">
             by {trimHash(shopInfo.owner)}
           </div>
-          <div className="text-sm text-purple-800">
+          <div className="text-sm text-gray-500">
             {shopInfo.productsCount} products
           </div>
         </div>

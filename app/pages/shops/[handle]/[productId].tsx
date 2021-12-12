@@ -9,62 +9,8 @@ import { ICart, IProductDesc } from '../../../lib/types'
 import saveAs from 'file-saver'
 import { useMetaMask } from 'metamask-react'
 import { useCachedPublicKey, useProduct, useShop, useShopId, useSale } from '../../../lib/contractHooks'
-import { checkoutCart } from '../../../lib/contractCalls'
+import { addRating, checkoutCart } from '../../../lib/contractCalls'
 
-
-function PostSaleOptions({ onClick }: { onClick: () => void }) {
-  const ratingList = new Array(4).fill(0)
-  const [rating, setRating] = useState(0)
-
-  return (
-    <div>
-      <div className="flex flex-row gap-2 items-center">
-        <Button text="Download" isPrimary={true} onClick={onClick} />
-        <div className="text-gray-500 text-xs">You’ve purchased this product</div>
-      </div>
-      <div className="flex flex-row gap-1 mt-3 ml-1 items-center">
-        {ratingList.map((_, i) => (
-          <Image key={'rating-' + i} src={`/assets/rating_${i}.png`} width={24} height={24} alt="" className={`rounded-full cursor-pointer hover:grayscale-0 ${rating === i ? '' : 'grayscale'}`} onClick={() => setRating(i)} />
-        ))}
-        <div className="text-gray-500 text-xs ml-2">0.05 MATIC added in store credits for rating this product</div>
-      </div>
-    </div>
-  )
-}
-
-const sampleInfo = [
-  ['Content CID', trimHash('0xf9c03776f126Ed6E43fBD2714A4bD293ba5E3515')],
-  ['Description CID', trimHash('0xf9c03776f126Ed6E43fBD2714A4bD293ba5E3515')],
-  ['License Hash', trimHash('0xf9c03776f126Ed6E43fBD2714A4bD293ba5E3515')],
-  ['Versions', 4],
-]
-
-function DetailsBox({ title, infoList }: {
-  title: string,
-  infoList: any[]
-}) {
-  const [isOpen, setIsOpen] = useState(false)
-  return (
-    <div className="w-96 mt-8" >
-      <div className="text-sm text-gray-500 cursor-pointer hover:text-purple-800 group select-none" onClick={() => setIsOpen(!isOpen)}>
-        <span className="text-lg text-gray-400 mr-2 group-hover:text-purple-800">
-          {isOpen ? '-' : '+'}
-        </span>
-        {title}
-      </div>
-      {isOpen && (
-        <div className="ml-4 mt-2">
-          {infoList.map(([key, value]) => (
-            <div key={key} className="flex flex-row text-gray-400 text-xs border-b py-3">
-              <div className="w-48">{key}</div>
-              <div className="font-mono text-gray-500">{value}</div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div >
-  )
-}
 
 export default function Product() {
   const router = useRouter()
@@ -73,6 +19,9 @@ export default function Product() {
   const { data: shopId, error: shopIdError } = useShopId(handle as string)
   const { data: shopInfo, error: shopInfoError } = useShop(shopId)
   const { data: cachedPublicKey, error: cachedPubilcKey } = useCachedPublicKey(account)
+  const [rating, setRating] = useState(0)
+
+
   const { data: sale, error: saleError } = useSale(
     shopId,
     parseInt(productId as string),
@@ -82,6 +31,10 @@ export default function Product() {
     shopId,
     parseInt(productId as string)
   )
+
+  console.log(productInfo?.ratingsPercent)
+
+  const isSeller = (account?.toLowerCase() === shopInfo?.owner.toLowerCase())
 
   const [currPreview, setCurrPreview] = useState<number>(0)
   const [productDesc, setProductDesc] = useState<IProductDesc>()
@@ -114,7 +67,7 @@ export default function Product() {
     }
   }, [descIPFS])
 
-  function BuyerOptions() {
+  function BuyOptions() {
     return (
       <div className="flex flex-row gap-2">
         <Button text="Buy Now" isPrimary={true} onClick={buyNow} />
@@ -123,10 +76,61 @@ export default function Product() {
     )
   }
 
+  function SellerOptions() {
+    return (
+      <div className="flex flex-row gap-4 items-center">
+        <Button text="Download" />
+        <div className='text-purple-800 text-sm'>
+          {productInfo?.totalRevenue} MATIC earned so far
+        </div>
+      </div>
+    )
+  }
+
+  async function addSaleRating(rating: number) {
+    await addRating(
+      shopId as number,
+      sale?.saleId as number,
+      rating,
+      ethereum
+    )
+  }
+
+  function PostSaleOptions() {
+    const ratingList = new Array(4).fill(0)
+
+    return (
+      <div>
+        <div className="flex flex-row gap-2 items-center">
+          <Button text="Download" isPrimary={true} onClick={downloadFile} />
+          <div className="text-gray-500 text-xs">You’ve purchased this product</div>
+        </div>
+        <div className="flex flex-row gap-1 mt-3 ml-1 items-center">
+          {ratingList.map((_, i) => (
+            <Image key={'rating-' + i + 1} src={`/assets/rating_${i}.png`} width={24} height={24} alt="" className={`rounded-full cursor-pointer ${rating ? 'hover:grayscale' : 'hover:grayscale-0'} ${rating === i + 1 ? 'hover:grayscale-0' : 'grayscale'}`}
+              onClick={() => {
+                if (!rating) {
+                  setRating(i + 1)
+                  addSaleRating(i + 1)
+                }
+              }}
+            />))}
+          <div className="text-gray-500 text-xs ml-2">
+            {rating ? "0.001 MATIC added in store credits for rating this product" : "Rate this product to get 0.001 MATIC added in credits"}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   useEffect(() => {
     if (sale) {
       setLoadingMsg('')
       setErrorMsg('')
+      if (sale.rating) {
+        setRating(sale.rating)
+      }
+      console.log(sale.rating, 'rating')
     }
   }, [sale])
 
@@ -168,7 +172,7 @@ export default function Product() {
 
   return (
     <div> {productInfo && productDesc && shopInfo &&
-      <div className="flex flex-row gap-24">
+      <div className="flex flex-row gap-24 mt-16">
         <div className="w-[450px] ml-36 mt-8">
           <div className="border rounded-xl h-[600px]">
             {previewStr && <Image src={previewStr[currPreview]} width={450} height={600} objectFit="cover" alt="" className="rounded-xl" />
@@ -180,19 +184,17 @@ export default function Product() {
             ))}
           </div>
         </div>
-        <div className="mt-12 mb-24">
+        <div className="mt-8 mb-24">
           <div className="text-3xl text-gray-600 font-light">{productDesc.name}</div>
           <div className="my-2 text-gray-500">
-            {shopInfo.handle}
+            @{shopInfo.handle}
             <span className="text-gray-400 px-2">by</span>
             <span className="text-gray-400 font-mono">
               {trimHash(shopInfo.owner)}
             </span>
           </div>
-          <div className="text-orange-800 my-4">{productInfo.price.toFixed(4)} MATIC
-            <span className="text-gray-400 ml-4">
-              ≈ {'$' + ((productInfo.price || 0) / 50).toFixed(2)}
-            </span>
+          <div className="text-orange-800 my-4">
+            {productInfo.price.toFixed(4)} MATIC
           </div>
           <div>
             {(productInfo.stock < 4294967295)
@@ -223,11 +225,11 @@ export default function Product() {
             ))}
             from {productInfo.ratingsCount} ratings
           </div>
-          {sale && <PostSaleOptions onClick={downloadFile} />}
-          {(!sale) && <BuyerOptions />}
+          {sale && <PostSaleOptions />}
+          {(!sale) && (!isSeller) && < BuyOptions />}
+          {isSeller && <SellerOptions />}
           {loadingMsg && <div className='mt-8'><Spinner msg={loadingMsg} /></div>}
           {errorMsg && <div className="text-red-500 text-sm">{errorMsg}</div>}
-          {false && <DetailsBox infoList={sampleInfo} title="Product Details" />}
           <div className="text-sm w-[480px] text-gray-500 mt-8 leading-6">{productDesc.description}</div>
         </div>
       </div>

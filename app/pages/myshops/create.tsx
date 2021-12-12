@@ -182,7 +182,7 @@ export default function CreateShop() {
       <div className="flex flex-row gap-4 px-4 mt-8 mb-4 items-center">
         {loadingMsg && <Spinner msg={loadingMsg} />}
         {errorMsg && (!loadingMsg) && <div className="text-red-500 text-sm">{errorMsg}</div>}
-        <Link href="/"><a className="ml-auto"><Button text="Cancel" /></a></Link>
+        <Link href="/myshops"><a className="ml-auto"><Button text="Cancel" /></a></Link>
         <Button text="Create Shop" isPrimary={true} isDisabled={!isValidShop} onClick={initCreateShop} />
       </div>
     </div>

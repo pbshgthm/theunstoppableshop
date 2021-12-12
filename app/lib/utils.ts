@@ -57,7 +57,8 @@ export async function unPackIPFS(data: Blob): Promise<{ [key: string]: File }> {
   )
 }
 
-export function trimString(str: string, maxLength: number) {
+export function trimString(str: string | undefined, maxLength: number) {
+  if (str === undefined) return ""
   return str.length > maxLength ? str.slice(0, maxLength) + '...' : str
 }
 
