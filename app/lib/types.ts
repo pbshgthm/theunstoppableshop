@@ -20,7 +20,7 @@ export interface IShopInfo {
   owner: string,
   detailsCId: string,
   handle: string,
-  benificiaries: IBeneficiary[],
+  benificiaries: IBeneficiary[]
 }
 
 export interface IProductDesc {
@@ -41,5 +41,22 @@ export interface IProductInfo {
   ratingsPercent: number[],
   ratingsCount: number,
   isAvailable: boolean,
-  sellerLicense: string,
+  sellerLicense: string
+}
+
+export interface ICart {
+  shopId: number,
+  productId: number,
+  price: number
+}
+
+export interface ISaleInfo {
+  saleId: number,
+  buyer: string,
+  productId: number,
+  amount: number,
+  saleDeadline: number,
+  unlockedLicense: string,
+  rating: number,
+  status: string,
 }

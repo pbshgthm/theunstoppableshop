@@ -97,7 +97,7 @@ export default function CreateShop() {
     const response = await sendToEstuary(zipped, detailsFileName + '.zip')
     setLoadingMsg("Creating Contract..")
 
-    const ownerPublicKey = cachedPublicKey || ethereum.request({
+    const ownerPublicKey = cachedPublicKey || await ethereum.request({
       method: 'eth_getEncryptionPublicKey',
       params: [account]
     })
@@ -106,7 +106,7 @@ export default function CreateShop() {
       handle,
       response.cid,
       validBenificiaries,
-      ownerPublicKey,
+      Buffer.from(ownerPublicKey).toString('base64'),
       ethereum
     )
 

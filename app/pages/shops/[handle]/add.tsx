@@ -32,10 +32,6 @@ export default function AddProduct() {
 
   const isValidProduct = account && name && description && (price && price > 0) && preview?.length && files.length && (stock || unlimitedStock)
 
-  const [license, setLicense] = useState<string>()
-  const [sellerLicense, setSellerLicense] = useState<string>()
-  const [lockedLicense, setLockedLicense] = useState<string>()
-
   useEffect(() => {
     if (isValidProduct) {
       setErrorMsg("")
@@ -89,24 +85,17 @@ export default function AddProduct() {
     const productFileZip = await zipFiles(files, productFileName) as Blob
 
     const { data: encrypted, key: licenseKey } = await encryptFile(productFileZip)
-    setLicense(licenseKey)
 
     const productResponse = await sendToEstuary(encrypted, productFileName + '.zip')
-    setLoadingMsg("Creating Contract..")
-    console.log(productResponse.cid)
+    setLoadingMsg("Calling Contract..")
 
     const lockedLicense = encryptStr(licenseKey, apiPubKey!)
     const sellerLicense = encryptStr(licenseKey, cachedPubKey!)
 
-    setSellerLicense(sellerLicense)
-    setLockedLicense(lockedLicense)
-
-    setLoadingMsg("")
-
     const { success, error } = await addProduct(
       shopId!,
       [`${productResponse.cid},${descResponse.cid}`],
-      lockedLicense,
+      Buffer.from(lockedLicense).toString('base64'),
       sellerLicense,
       price.toString(),
       unlimitedStock ? 4294967295 : stock!,
@@ -188,11 +177,6 @@ export default function AddProduct() {
         <Link href="/"><a className="ml-auto"><Button text="Cancel" /></a></Link>
         <Button text="Add Product" isPrimary={true} isDisabled={!isValidProduct} onClick={initAddProduct} />
       </div>
-      {lockedLicense &&
-        <div className="text-xs text-gray-500 w-96 break-words">{Buffer.from(lockedLicense).toString('base64')}</div>}
-      {sellerLicense &&
-        <div className="text-xs text-gray-500 w-96 break-words">{sellerLicense}</div>}
-      {license && <div className="text-xs text-gray-500">{license}</div>}
     </div>
   )
 }

@@ -124,9 +124,13 @@ export default function Shop() {
             </div>
             <div>
               {productList && productList.map((product, i) => (
-                <div key={'product-' + i} className="flex flex-col gap-2 mt-4">
-                  {product.productId}
-                </div>
+                <Link href={`/shops/${handle}/${product.productId}`} key={'product-' + i}>
+                  <a>
+                    <div className="flex flex-col gap-2 mt-4">
+                      Product #{product.productId}
+                    </div>
+                  </a>
+                </Link>
               ))}
             </div>
           </div>

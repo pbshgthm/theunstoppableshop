@@ -3,13 +3,14 @@ import useSWR from "swr"
 import config from "../config.json"
 import guildABI from "./guildABI.json"
 import { Contract, Provider } from "ethers-multicall"
-import { IProductInfo, IShopInfo } from "./types"
+import { IProductInfo, ISaleInfo, IShopInfo } from "./types"
 
 
 const provider = new ethers.providers.JsonRpcProvider(config.rpcProvider)
 const guild = new ethers.Contract(config.guildAddress, guildABI, provider)
 const multiCallProvider = new Provider(provider, 80001)
 const multiGuild = new Contract(config.guildAddress, guildABI)
+const IGuild = new ethers.utils.Interface(guildABI)
 
 
 function parseShop(shopId: number, shop: any, benificiaries: any[]) {
@@ -47,6 +48,19 @@ function parseProduct(productId: number, product: any): IProductInfo {
     isAvailable: product[8],
     sellerLicense: product[9],
   }
+}
+
+function parseSale(saleId: number, sale: any) {
+  return {
+    saleId,
+    buyer: sale[0],
+    productId: parseInt(sale[2]),
+    amount: parseInt(sale[3]),
+    saleDeadline: parseInt(sale[4]),
+    unlockedLicense: sale[5],
+    rating: sale[6],
+    status: sale[7],
+  } as ISaleInfo
 }
 
 export function useShopId(shopHandle: string | undefined) {
@@ -99,7 +113,8 @@ export function useProduct(shopId: number | undefined, productId: number | undef
 
 export function useCachedPublicKey(address: string | null) {
   const fetcher = async (fn: string, address: string) => {
-    return await guild.publicKeys(address) as string
+    const pubKey = await guild.publicKeys(address) as string
+    return Buffer.from(pubKey, "base64").toString()
   }
   const { data, error } = useSWR(address ? ["useCachedPublicKey", address] : null, fetcher)
   return { data, error }
@@ -110,5 +125,55 @@ export function useApiPublicKey() {
     return await guild.getApiPublicKey() as string
   }
   const { data, error } = useSWR(["useApiPublicKey"], fetcher)
+  return { data, error }
+}
+
+export function useGuildInfo() {
+  const fetcher = async (fn: string) => {
+    const guildInfoRaw = await guild.getGuildInfo()
+    return {
+      owner: guildInfoRaw[0],
+      oracleClient: guildInfoRaw[1],
+      shopFactory: guildInfoRaw[2],
+      ratingReward: ethers.utils.formatEther(guildInfoRaw[3]),
+      serviceTax: ethers.utils.formatEther(guildInfoRaw[4]),
+    }
+  }
+
+  const { data, error } = useSWR(["useGuildInfo"], fetcher)
+  return { data, error }
+}
+
+
+
+export function useSale(
+  shopId: number | undefined,
+  productId: number | undefined,
+  buyer: string | undefined) {
+  const fetcher = async (
+    fn: string,
+    _shopId: number,
+    _productId: number,
+    _buyer: string
+  ) => {
+    const response = await provider.getLogs({
+      address: config.guildAddress,
+      topics: [
+        ethers.utils.id("RequestedSale(uint256,address,uint256,uint8,uint256)"),
+        ethers.utils.hexZeroPad(ethers.utils.hexlify(_shopId), 32),
+        ethers.utils.hexZeroPad(_buyer, 32),
+        ethers.utils.hexZeroPad(ethers.utils.hexlify(_productId), 32),
+      ],
+      fromBlock: "0x0",
+      toBlock: "latest",
+    })
+    const saleId = parseInt(IGuild.parseLog(response[0]).args.saleId)
+    const saleInfoRaw = await guild.getSaleInfo(shopId, saleId)
+    return parseSale(saleId, saleInfoRaw)
+  }
+  const { data, error } = useSWR(
+    shopId !== undefined && productId !== undefined && buyer !== undefined ? ["useSale", shopId, productId, buyer] : null,
+    fetcher
+  )
   return { data, error }
 }

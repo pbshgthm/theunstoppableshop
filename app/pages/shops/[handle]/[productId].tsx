@@ -5,21 +5,12 @@ import { decryptFile, toDateString, trimHash, unPackIPFS } from '../../../lib/ut
 import { Button } from '../../../components/UIComp'
 import { useIPFS } from '../../../lib/miscHooks'
 import useAsyncEffect from 'use-async-effect'
-import { IProductDesc, IProductInfo } from '../../../lib/types'
+import { ICart, IProductDesc } from '../../../lib/types'
 import saveAs from 'file-saver'
 import { useMetaMask } from 'metamask-react'
-import { useProduct, useShop, useShopId } from '../../../lib/contractHooks'
+import { useCachedPublicKey, useProduct, useShop, useShopId, useSale } from '../../../lib/contractHooks'
+import { checkoutCart } from '../../../lib/contractCalls'
 
-const unlockedLic = '{"version":"x25519-xsalsa20-poly1305","nonce":"srgZhbx7J2aJwXxI/dIexY8dww8a7kiF","ephemPublicKey":"as9hcSNocFMwVsrsEebI1hpFNfpo2TEloownJUQq6Co=","ciphertext":"xGnm5gTBz5wdpW0nIkAE3FywmDVfKeHHSxFDxbzPo6y0+saARrLMA9evldJ7nk6p"}'
-
-function BuyerOptions() {
-  return (
-    <div className="flex flex-row gap-2">
-      <Button text="Buy Now" isPrimary={true} />
-      <Button text="Add to Cart" />
-    </div>
-  )
-}
 
 function DownloadOptions({ onClick }: { onClick: () => void }) {
   const ratingList = new Array(4).fill(0)
@@ -78,20 +69,26 @@ function DetailsBox({ title, infoList }: {
 export default function Product() {
   const router = useRouter()
   const { handle, productId } = router.query
+  const { ethereum, account } = useMetaMask()
   const { data: shopId, error: shopIdError } = useShopId(handle as string)
   const { data: shopInfo, error: shopInfoError } = useShop(shopId)
+  const { data: publicKey, error: publicKeyError } = useCachedPublicKey(account)
+  const { data: sale, error: saleError } = useSale(
+    shopId,
+    parseInt(productId as string),
+    account || undefined
+  )
   const { data: productInfo, error: productInfoError } = useProduct(
     shopId,
     parseInt(productId as string)
   )
+
   const [currPreview, setCurrPreview] = useState<number>(0)
   const [productDesc, setProductDesc] = useState<IProductDesc>()
   const [previewStr, setPreviewStr] = useState<string[]>()
 
   const { data: descIPFS, error: desscIPFSError } = useIPFS(productInfo?.detailsCID)
   const { data: filesIPFS, error: filesIPFSError } = useIPFS(productInfo?.contentCID)
-
-  const { ethereum, account } = useMetaMask()
 
   useAsyncEffect(async () => {
     if (descIPFS) {
@@ -114,19 +111,43 @@ export default function Product() {
     }
   }, [descIPFS])
 
+  function BuyerOptions() {
+    return (
+      <div className="flex flex-row gap-2">
+        <Button text="Buy Now" isPrimary={true} onClick={buyNow} />
+        <Button text="Add to Cart" />
+      </div>
+    )
+  }
+
   async function downloadFile() {
-    if (filesIPFS) {
+    if (filesIPFS && sale) {
       const license = await ethereum.request({
         method: 'eth_decrypt',
-        params: [productInfo?.sellerLicense, account]
+        params: [sale.unlockedLicense, account]
       })
       const decrypted = await decryptFile(filesIPFS, license)
-      saveAs(decrypted, `stuff.zip`)
+      saveAs(decrypted, `${productDesc?.name}.zip`)
     }
   }
 
+  async function buyNow() {
+    const cartItem: ICart = {
+      shopId: shopId as number,
+      productId: parseInt(productId as string),
+      price: productInfo?.price as number,
+    }
+
+    await checkoutCart(
+      [cartItem],
+      Buffer.from(publicKey as string).toString('base64'),
+      0,
+      ethereum
+    )
+  }
+
   return (
-    <div> {productInfo && productDesc && shopInfo &&
+    <div> {productInfo && productDesc && shopInfo && publicKey &&
       <div className="flex flex-row gap-24">
         <div className="w-[450px] ml-36 mt-8">
           <div className="border rounded-xl h-[600px]">
@@ -182,7 +203,8 @@ export default function Product() {
             ))}
             from {productInfo.ratingsCount} ratings
           </div>
-          <DownloadOptions onClick={downloadFile} />
+          {sale && <DownloadOptions onClick={downloadFile} />}
+          {(!sale) && <BuyerOptions />}
           {false && <DetailsBox infoList={sampleInfo} title="Product Details" />}
           <div className="text-sm w-[480px] text-gray-500 mt-8 leading-6">{productDesc.description}</div>
         </div>

@@ -1,6 +1,6 @@
 import { ethers } from "ethers"
 import config from "../config.json"
-import { IBeneficiary } from "./types"
+import { IBeneficiary, ICart } from "./types"
 import guildABI from "../lib/guildABI.json"
 
 
@@ -54,6 +54,51 @@ export async function addProduct(
       sellerLicense,
       ethers.utils.parseEther(price),
       stock
+    )
+    await txn.wait()
+    return { success: true, error: '' }
+  } catch (err) {
+    const error = err as any
+    let errorMessage = ''
+    try {
+      errorMessage = error.data.message.replace('execution reverted: ', '')
+    } catch {
+      errorMessage = error.message
+      if (errorMessage === 'MetaMask Tx Signature: User denied transaction signature.')
+        errorMessage = 'You\'ev denied transaction signature :('
+    }
+    return { success: false, error: errorMessage }
+  }
+}
+
+export async function checkoutCart(
+  cartItems: ICart[],
+  publicKey: string,
+  redeemCredits: number,
+  ethereum: ethers.providers.ExternalProvider
+) {
+  const signer = new ethers.providers.Web3Provider(ethereum).getSigner()
+  const guild = new ethers.Contract(config.guildAddress, guildABI, signer)
+  const cartItemsGuild = cartItems.map((item) => [
+    item.shopId,
+    item.productId,
+    ethers.utils.parseEther(item.price.toString()),
+  ])
+  const cartAmount = cartItems.reduce((acc, item) => acc + item.price, 0)
+  const txn = await guild.checkoutCart(
+    cartItemsGuild,
+    publicKey,
+    redeemCredits,
+    { value: ethers.utils.parseEther(cartAmount.toString()) }
+  )
+
+
+  try {
+    const txn = await guild.checkoutCart(
+      cartItemsGuild,
+      publicKey,
+      redeemCredits,
+      { value: ethers.utils.parseEther(cartAmount.toString()) }
     )
     await txn.wait()
     return { success: true, error: '' }

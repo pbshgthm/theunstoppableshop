@@ -114,7 +114,6 @@ export function decryptFile(data: Blob, key: string): Promise<Blob> {
 }
 
 export function encryptStr(plainText: string, publicKey: string) {
-  console.log(plainText, publicKey)
   const encryptedObj = sigUtil.encrypt({
     publicKey: publicKey,
     data: plainText,
