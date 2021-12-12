@@ -40,8 +40,8 @@ export function ProductPreview({ productInfo }: {
         <div className="flex flex-col gap-3">
           <div className="text-lg text-gray-600">{productDesc?.name}</div>
           <div className="text-gray-400 text-sm">{productInfo.price} MATIC</div>
-          <div className="text-sm text-gray-500 leading-6">
-            {productDesc?.description.slice(0, 140)}
+          <div className="text-sm text-gray-500 leading-6 w-[400px]">
+            {productDesc?.description.slice(0, 80)}...
           </div>
         </div>
         <div className="mb-2">

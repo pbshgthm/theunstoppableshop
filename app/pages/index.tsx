@@ -23,7 +23,6 @@ export default function Index() {
       <div className="m-auto text-center mt-4">
         <Image src="/assets/poweredby.png" width={600} height={60} alt="poweredby" />
       </div>
-
     </div>
   )
 }

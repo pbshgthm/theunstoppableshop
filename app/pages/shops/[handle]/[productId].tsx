@@ -71,7 +71,6 @@ export default function Product() {
     return (
       <div className="flex flex-row gap-2">
         <Button text="Buy Now" isPrimary={true} onClick={buyNow} />
-        <Button text="Add to Cart" />
       </div>
     )
   }
