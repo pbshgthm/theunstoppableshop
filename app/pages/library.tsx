@@ -1,7 +1,7 @@
 import { useMetaMask } from "metamask-react"
 import Link from "next/link"
 import { LibraryItem } from "../components/LibraryItem"
-import { useBuyerProducts } from "../lib/contractHooks"
+import { useBuyerProducts } from "../lib/hooks"
 
 
 export default function Library() {
@@ -15,7 +15,7 @@ export default function Library() {
       </div>
       <div className="grid grid-cols-3 mt-8 mb-24 pl-28">
         {library && library.map(({ sale, product, shop }, i) => (
-          <LibraryItem key={'lib-' + i} shopInfo={shop} productInfo={product} saleInfo={sale} />
+          <LibraryItem key={`lib-${sale.saleId}-${product.productId}-${shop.shopId}`} shopInfo={shop} productInfo={product} saleInfo={sale} />
         ))}
       </div>
     </div>

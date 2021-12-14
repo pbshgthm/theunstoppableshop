@@ -74,7 +74,7 @@ export function BenificiaryInput({ setValue, benificiary, isDisabled, isOwner }:
   }, [currAddress, currShare, setValue])
 
   return (
-    <div>
+    <div className="-ml-3">
       <input
         type="text"
         placeholder='0x0000000000000000000000000000000000000000'

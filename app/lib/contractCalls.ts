@@ -27,7 +27,7 @@ export async function createShop(
     } catch {
       errorMessage = error.message
       if (errorMessage === 'MetaMask Tx Signature: User denied transaction signature.')
-        errorMessage = 'You\'ev denied transaction signature :('
+        errorMessage = "You've denied transaction signature :("
     }
     return { success: false, error: errorMessage }
   }
@@ -65,7 +65,7 @@ export async function addProduct(
     } catch {
       errorMessage = error.message
       if (errorMessage === 'MetaMask Tx Signature: User denied transaction signature.')
-        errorMessage = 'You\'ev denied transaction signature :('
+        errorMessage = "You've denied transaction signature :("
     }
     return { success: false, error: errorMessage }
   }
@@ -102,7 +102,7 @@ export async function checkoutCart(
     } catch {
       errorMessage = error.message
       if (errorMessage === 'MetaMask Tx Signature: User denied transaction signature.')
-        errorMessage = 'You\'ev denied transaction signature :('
+        errorMessage = "You've denied transaction signature :("
     }
     return { success: false, error: errorMessage }
   }

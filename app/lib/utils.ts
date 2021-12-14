@@ -62,6 +62,10 @@ export function trimString(str: string | undefined, maxLength: number) {
   return str.length > maxLength ? str.slice(0, maxLength) + '...' : str
 }
 
+export function effectivePrice(price: number, reward: number, tax: number) {
+  return parseFloat((price + reward + tax).toPrecision(6))
+}
+
 
 function generateKey() {
   return CryptoJS.lib.WordArray.random(24).toString(CryptoJS.enc.Base64)

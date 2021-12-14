@@ -3,7 +3,7 @@ import useSWR from "swr"
 import config from "../config.json"
 import guildABI from "./guildABI.json"
 import { Contract, Provider } from "ethers-multicall"
-import { IProductInfo, ISaleInfo, IShopInfo } from "./types"
+import { IGuildInfo, IProductInfo, ISaleInfo, IShopInfo } from "./types"
 
 const provider = new ethers.providers.JsonRpcProvider(config.rpcProvider)
 const guild = new ethers.Contract(config.guildAddress, guildABI, provider)
@@ -25,7 +25,8 @@ function parseShop(shopId: number, shop: any, benificiaries: any[]): IShopInfo {
   }
 }
 
-function parseProduct(productId: number, product: any): IProductInfo {
+function parseProduct(productId: number, product: any):
+  IProductInfo {
   const ratingsNum = product[7].map((x: any) => x)
   const ratingsCount = ratingsNum[0].reduce((acc: number, x: number) => acc + x, 0)
   const ratingsPercent = ratingsCount ? ratingsNum[0].map((x: string) =>
@@ -36,7 +37,7 @@ function parseProduct(productId: number, product: any): IProductInfo {
     productId,
     contentCID: product[0].at(-1).split(",")[0],
     detailsCID: product[0].at(-1).split(",")[1],
-    price: parseFloat(ethers.utils.formatEther(product[2])) + 0.002,
+    price: parseFloat(ethers.utils.formatEther(product[2])),
     stock: parseInt(product[3]),
     salesCount: parseInt(product[4]),
     totalRevenue: parseFloat(ethers.utils.formatEther(product[5])),
@@ -58,6 +59,16 @@ function parseSale(saleId: number, sale: any): ISaleInfo {
     unlockedLicense: sale[5],
     rating: parseInt(sale[6]),
     status: parseInt(sale[7]),
+  }
+}
+
+function parseGuild(guild: any): IGuildInfo {
+  return {
+    owner: guild[0],
+    oracleClient: guild[1],
+    shopFactory: guild[2],
+    ratingReward: parseFloat(ethers.utils.formatEther(guild[3])),
+    serviceTax: parseFloat(ethers.utils.formatEther(guild[4])),
   }
 }
 
@@ -145,18 +156,12 @@ export function useApiPublicKey() {
   return { data, error }
 }
 
-export function useGuildInfo() {
+export function useGuild() {
   const fetcher = async (fn: string) => {
     const guildInfoRaw = await guild.getGuildInfo()
-    return {
-      owner: guildInfoRaw[0],
-      oracleClient: guildInfoRaw[1],
-      shopFactory: guildInfoRaw[2],
-      ratingReward: ethers.utils.formatEther(guildInfoRaw[3]),
-      serviceTax: ethers.utils.formatEther(guildInfoRaw[4]),
-    }
+    return parseGuild(guildInfoRaw)
   }
-  const { data, error } = useSWR(["useGuildInfo"], fetcher)
+  const { data, error } = useSWR(["useGuild"], fetcher)
   return { data, error }
 }
 
@@ -246,4 +251,13 @@ export function useBuyerProducts(buyer: string | null) {
   const { data, error } = useSWR(buyer ? ["useBuyerProducts", buyer] : null, fetcher)
   return { data, error }
 
+}
+
+async function ipfsFetcher(fn: string, cid: string) {
+  return fetch(config.ipfsGateway + cid).then(res => res.blob())
+}
+
+export function useIPFS(cid: string | undefined) {
+  const { data, error } = useSWR(cid ? ['useIPFS', cid] : null, ipfsFetcher)
+  return { data, error }
 }

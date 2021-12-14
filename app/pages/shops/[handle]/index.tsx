@@ -1,10 +1,9 @@
 import { trimHash, unPackIPFS } from "../../../lib/utils"
-import { useIPFS } from "../../../lib/miscHooks"
 import Image from "next/image"
 import { useEffect, useState } from "react"
 import useAsyncEffect from "use-async-effect"
 import { IShopDesc } from "../../../lib/types"
-import { useProductList, useShop, useShopId } from "../../../lib/contractHooks"
+import { useIPFS, useProductList, useShop, useShopId } from "../../../lib/hooks"
 import { useRouter } from "next/router"
 import { Button } from "../../../components/UIComp"
 import Link from "next/link"
@@ -88,7 +87,7 @@ export default function Shop() {
             </div>
             <div className="my-4">
               <div className="text-2xl text-purple-800 my-1">
-                {productList?.reduce((acc, cur) => acc + cur.totalRevenue, 0)}
+                {productList?.reduce((acc, cur) => acc + cur.totalRevenue, 0).toFixed(6)}
               </div>
               <div className="text-sm text-gray-500 my-1">MATIC earned from</div>
               <div className="text-sm text-purple-800 my-1">
@@ -112,15 +111,17 @@ export default function Shop() {
             <div className="text-sm text-gray-600 w-[550px] mt-4 leading-6">
               {shopDesc.description}
             </div>
-            <div className="my-8">
-              <div className="text-gray-400 text-sm">
+            <div className="my-12">
+              <div className="text-gray-500 text-sm">
                 Revenue from this shop is shared with
               </div>
-              <div className="font-mono text-sm text-gray-500 my-2">
+              <div className="font-mono text-sm text-purple-800 mt-3">
                 {shopInfo.benificiaries.map((ben, i) => (
                   <div key={'ben-' + i} className="inline-block">
                     {trimHash(ben.address)}
-                    <span className="font-medium ml-1 mr-8">{ben.share}%</span>
+                    <span className="font-medium ml-1 mr-8 text-gray-600">
+                      {ben.share}%
+                    </span>
                   </div>
                 ))}
               </div>
@@ -129,9 +130,9 @@ export default function Shop() {
               Products
               <div className="ml-4 mt-1 w-56 h-[1px] bg-orange-800"></div>
             </div>
-            <div className="flex flex-col gap-8 my-12">
+            <div className="flex flex-col gap-12 my-12">
               {productList && productList.reverse().map((productInfo, i) => (
-                <Link href={`/shops/${handle}/${productInfo.productId}`} key={`p-${i}`}>
+                <Link href={`/shops/${handle}/product-${productInfo.productId}`} key={`prd-${productInfo.productId}`}>
                   <a><ProductPreview productInfo={productInfo} /></a>
                 </Link>
               ))}

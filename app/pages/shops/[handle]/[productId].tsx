@@ -1,25 +1,27 @@
 import { useRouter } from 'next/router'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
-import { decryptFile, toDateString, trimHash, unPackIPFS } from '../../../lib/utils'
+import { decryptFile, effectivePrice, toDateString, trimHash, unPackIPFS } from '../../../lib/utils'
 import { Button, Spinner } from '../../../components/UIComp'
-import { useIPFS } from '../../../lib/miscHooks'
 import useAsyncEffect from 'use-async-effect'
 import { ICart, IProductDesc } from '../../../lib/types'
 import saveAs from 'file-saver'
 import { useMetaMask } from 'metamask-react'
-import { useCachedPublicKey, useProduct, useShop, useShopId, useSale } from '../../../lib/contractHooks'
+import { useCachedPublicKey, useProduct, useShop, useShopId, useSale, useGuild, useIPFS } from '../../../lib/hooks'
 import { addRating, checkoutCart } from '../../../lib/contractCalls'
 
 
 export default function Product() {
   const router = useRouter()
-  const { handle, productId } = router.query
+  const { handle } = router.query
+  const productStr = router.query.productId as string
+  const productId = productStr?.split('-')[1]
   const { ethereum, account } = useMetaMask()
   const { data: shopId, error: shopIdError } = useShopId(handle as string)
   const { data: shopInfo, error: shopInfoError } = useShop(shopId)
   const { data: cachedPublicKey, error: cachedPubilcKey } = useCachedPublicKey(account)
   const [rating, setRating] = useState(0)
+  const { data: guildInfo, error: guildInfoError } = useGuild()
 
 
   const { data: sale, error: saleError } = useSale(
@@ -31,8 +33,6 @@ export default function Product() {
     shopId,
     parseInt(productId as string)
   )
-
-  console.log(productInfo?.ratingsPercent)
 
   const isSeller = (account?.toLowerCase() === shopInfo?.owner.toLowerCase())
 
@@ -148,7 +148,7 @@ export default function Product() {
     const cartItem: ICart = {
       shopId: shopId as number,
       productId: parseInt(productId as string),
-      price: productInfo?.price as number,
+      price: effectivePrice(productInfo?.price!, guildInfo?.ratingReward!, guildInfo?.serviceTax!)
     }
     setLoadingMsg('Requesting Product..')
     const buyerPublicKey = cachedPublicKey || await ethereum.request({
@@ -170,7 +170,7 @@ export default function Product() {
   }
 
   return (
-    <div> {productInfo && productDesc && shopInfo &&
+    <div> {productInfo && productDesc && shopInfo && guildInfo &&
       <div className="flex flex-row gap-24 mt-16">
         <div className="w-[450px] ml-36 mt-8">
           <div className="border rounded-xl h-[600px]">
@@ -193,7 +193,7 @@ export default function Product() {
             </span>
           </div>
           <div className="text-orange-800 my-4">
-            {productInfo.price.toFixed(4)} MATIC
+            {effectivePrice(productInfo.price, guildInfo.serviceTax, guildInfo.ratingReward)} MATIC
           </div>
           <div>
             {(productInfo.stock < 4294967295)
@@ -216,16 +216,17 @@ export default function Product() {
           <div className="flex flex-row gap-4 my-8 text-gray-400 text-xs items-center">
             {productInfo.ratingsPercent.map((rating, i) => (
               <div key={'rating-' + i} className="flex flex-row items-center">
-                <span className={`mr-1 ${Math.max(...productInfo.ratingsPercent) === rating ? 'text-orange-800' : ''}`}>
+                <span className={`mr-1 ${Math.max(...productInfo.ratingsPercent) === rating && productInfo.ratingsCount ? 'text-orange-800' : ''}`}>
                   {rating}%
                 </span>
-                <Image src={`/assets/rating_${i}.png`} width={24} height={24} objectFit="cover" alt="" className={`rounded-full ${Math.max(...productInfo.ratingsPercent) === rating ? '' : 'grayscale'}`} />
+                <Image src={`/assets/rating_${i}.png`} width={24} height={24} objectFit="cover" alt="" className={`rounded-full ${Math.max(...productInfo.ratingsPercent) === rating && productInfo.ratingsCount ? '' : 'grayscale'}`} />
               </div>
             ))}
             from {productInfo.ratingsCount} ratings
           </div>
           {sale && <PostSaleOptions />}
-          {(!sale) && (!isSeller) && < BuyOptions />}
+          {(!sale) && (!isSeller) && (productInfo.salesCount < productInfo.stock) && <BuyOptions />}
+          {(productInfo.salesCount === productInfo.stock) && <div className='text-red-800 text-sm mb-8'>Product is out of Stock :/</div>}
           {isSeller && <SellerOptions />}
           {loadingMsg && <div className='mt-8'><Spinner msg={loadingMsg} /></div>}
           {errorMsg && <div className="text-red-500 text-sm mt-2">{errorMsg}</div>}

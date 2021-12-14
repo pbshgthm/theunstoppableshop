@@ -1,7 +1,6 @@
 import { ShopPreview } from "../components/ShopPreview"
-import { useShopList } from "../lib/contractHooks"
+import { useShopList } from "../lib/hooks"
 import Link from "next/link"
-import { Button } from "../components/UIComp"
 
 export default function Discover() {
   const { data: shopList, error: shopError } = useShopList()
@@ -12,7 +11,7 @@ export default function Discover() {
       </div>
       <div className="grid grid-cols-5 mt-8 px-24">
         {shopList?.map(shopInfo => (
-          <Link href={`/shops/${shopInfo.handle}`} key={shopInfo.shopId}>
+          <Link href={`/shops/${shopInfo.handle}`} key={'shop-' + shopInfo.shopId}>
             <a><ShopPreview shopInfo={shopInfo} /></a>
           </Link>
         ))}

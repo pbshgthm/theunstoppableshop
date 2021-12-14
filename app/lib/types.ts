@@ -62,3 +62,11 @@ export interface ISaleInfo {
   rating: number,
   status: number,
 }
+
+export interface IGuildInfo {
+  owner: string,
+  oracleClient: string,
+  shopFactory: string,
+  ratingReward: number,
+  serviceTax: number,
+}

@@ -5,9 +5,9 @@ import { FileUpload } from "../../../components/FileUpload"
 import Image from 'next/image'
 import Link from 'next/link'
 import { Spinner, Button } from '../../../components/UIComp'
-import { encryptFile, encryptStr, sendToEstuary, trimString, zipFiles } from '../../../lib/utils'
+import { effectivePrice, encryptFile, encryptStr, sendToEstuary, trimString, zipFiles } from '../../../lib/utils'
 import { useMetaMask } from 'metamask-react'
-import { useApiPublicKey, useCachedPublicKey, useShopId } from '../../../lib/contractHooks'
+import { useApiPublicKey, useCachedPublicKey, useGuild, useShopId } from '../../../lib/hooks'
 import { addProduct } from '../../../lib/contractCalls'
 
 export default function AddProduct() {
@@ -17,6 +17,8 @@ export default function AddProduct() {
   const { data: shopId, error: shopIdError } = useShopId(handle as string)
   const { data: cachedPubKey, error: cachedPubKeyError } = useCachedPublicKey(account)
   const { data: apiPubKey, error: apiPubKeyError } = useApiPublicKey()
+  const { data: guildInfo, error: guildInfoError } = useGuild()
+
 
   const [name, setName] = useState<string>()
   const [description, setDescription] = useState<string>()
@@ -111,34 +113,38 @@ export default function AddProduct() {
   }
 
   return (
-    <div className="w-[540px] m-auto my-24">
+    <div className="w-[640px] m-auto my-24">
       <div className="text-2xl pl-4 mb-4 text-gray-600">Add Product</div>
       <div className="p-4 flex flex-col gap-4">
         <div className="uppercase text-xs text-gray-400 my-2">Product Information</div>
         <div className="flex flex-row text-gray-500 gap-3">
-          <div className="text-sm w-32">Product Name *</div>
+          <div className="text-sm w-56">Product Name *</div>
           <TextInput placeholder={'Product Name'} setValue={setName} />
         </div>
         <div className="flex flex-row text-gray-500 gap-3">
-          <div className="text-sm w-32">Description *</div>
+          <div className="text-sm w-56">Description *</div>
           <TextArea placeholder={'Product Description'} setValue={setDescription} />
         </div>
         <div className="flex flex-row text-gray-500 gap-3">
-          <div className="text-sm w-32">Price *</div>
+          <div className="text-sm w-56">Price *</div>
           <div>
             <NumberInput placeHolder="0.000000 MATIC" setValue={setPrice} isDecimal={true} />
-            <div className="text-gray-400 text-sm mt-2">≈ {'$' + ((price || 0) / 50).toFixed(2)}</div>
+            <div className="text-gray-400 text-xs mt-2 w-96">
+              Effective price : <span className='text-purple-800'>
+                {effectivePrice((price || 0), (guildInfo?.ratingReward || 0), (guildInfo?.serviceTax || 0))}
+              </span> MATIC,  including {(guildInfo?.ratingReward || 0)} MATIC Rating Reward + {(guildInfo?.serviceTax || 0)} MATIC service fee.
+            </div>
           </div>
         </div>
         <div className="flex flex-row text-gray-500 gap-3">
-          <div className="text-sm w-32">Supply *</div>
+          <div className="text-sm w-56">Supply *</div>
           <div>
-            <NumberInput placeHolder="Limited edition" setValue={setStock} isDisabled={unlimitedStock} value={unlimitedStock ? '∞' : '0'} />
+            <NumberInput placeHolder="No. of available" setValue={setStock} isDisabled={unlimitedStock} value={unlimitedStock ? '∞' : ''} />
             <Toggle label="Unlimited" checked={false} setValue={setUnlimitedStock} />
           </div>
         </div>
         <div className="flex flex-row text-gray-500 gap-3">
-          <div className="text-sm w-32">Preview *</div>
+          <div className="text-sm w-56">Preview *</div>
           <div>
             <FileUpload files={preview} onlyImages={true} maxFiles={5} setFiles={setPreview} />
             <div className="flex flex-row gap-2 mt-2">
@@ -159,7 +165,7 @@ export default function AddProduct() {
         </div>
         <div className="uppercase text-xs text-gray-400 my-2">Product Files</div>
         <div className="flex flex-row text-gray-500 gap-3" >
-          <div className="text-sm w-32">Product Files *</div>
+          <div className="text-sm w-56">Product Files *</div>
           <div>
             <FileUpload setFiles={setFiles} />
             <div className="text-sm text-gray-400 mt-4 mb-2 w-96 whitespace-normal">

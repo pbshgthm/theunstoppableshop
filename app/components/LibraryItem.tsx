@@ -1,13 +1,13 @@
 import { useState } from "react"
 import useAsyncEffect from "use-async-effect"
-import { useIPFS } from "../lib/miscHooks"
 import { IProductDesc, IProductInfo, ISaleInfo, IShopInfo } from "../lib/types"
-import { decryptFile, toDateString, trimHash, trimString, unPackIPFS } from "../lib/utils"
+import { decryptFile, effectivePrice, toDateString, trimHash, trimString, unPackIPFS } from "../lib/utils"
 import Image from "next/image"
 import { Button } from "./UIComp"
 import Link from "next/link"
 import { useMetaMask } from "metamask-react"
 import saveAs from "file-saver"
+import { useGuild, useIPFS } from "../lib/hooks"
 
 export function LibraryItem({ productInfo, saleInfo, shopInfo }: {
   productInfo: IProductInfo,
@@ -16,6 +16,7 @@ export function LibraryItem({ productInfo, saleInfo, shopInfo }: {
 }) {
 
   const { account, ethereum } = useMetaMask()
+  const { data: guildInfo, error: guildInfoError } = useGuild()
   const { data: descIPFS, error: descIPFSError } = useIPFS(productInfo?.detailsCID)
   const { data: filesIPFS, error: filesIPFSError } = useIPFS(productInfo?.contentCID)
   const [productDesc, setProductDesc] = useState<IProductDesc>()
@@ -53,7 +54,7 @@ export function LibraryItem({ productInfo, saleInfo, shopInfo }: {
 
   return (
     <div>
-      {descIPFS && filesIPFS &&
+      {descIPFS && filesIPFS && guildInfo &&
         <div className="flex flex-row gap-4 my-8">
           {previewStr && <Image src={previewStr[0]} width={150} height={200} objectFit="cover" alt="" className="rounded-xl shadow-2xl" />}
           <div className="flex flex-col">
@@ -65,7 +66,7 @@ export function LibraryItem({ productInfo, saleInfo, shopInfo }: {
               <span className="ml-2 font-mono text-xs">{trimHash(shopInfo.owner)}</span>
             </div>
             <div className="text-gray-500 text-sm mt-4">
-              {productInfo.price} MATIC
+              {effectivePrice(productInfo.price, guildInfo.ratingReward, guildInfo.serviceTax)} MATIC
             </div>
             <div className="text-gray-400 text-sm mt-1">
               Bought on {toDateString(saleInfo.saleDeadline).slice(0, -8)}
@@ -78,6 +79,6 @@ export function LibraryItem({ productInfo, saleInfo, shopInfo }: {
             </div>
           </div>
         </div>}
-    </div>
+    </div >
   )
 }

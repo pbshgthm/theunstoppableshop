@@ -9,7 +9,7 @@ import { IBeneficiary, IShopDesc } from "../../lib/types"
 import { createShop } from "../../lib/contractCalls"
 import Router from 'next/router'
 import Link from "next/link"
-import { useCachedPublicKey } from "../../lib/contractHooks"
+import { useCachedPublicKey } from "../../lib/hooks"
 
 
 const emptyBeneficiary: IBeneficiary = {
@@ -21,7 +21,6 @@ export default function CreateShop() {
 
   const { account, ethereum } = useMetaMask()
   const { data: cachedPublicKey, error: cachedPublicKeyError } = useCachedPublicKey(account)
-
 
   const [handle, setHandle] = useState<string>()
   const [name, setName] = useState<string>()
@@ -120,20 +119,20 @@ export default function CreateShop() {
   }
 
   return (
-    <div className="w-[540px] m-auto my-24">
+    <div className="w-[640px] m-auto my-24">
       <div className="text-2xl pl-4 mb-4 text-gray-600">Create Shop</div>
       <div className="p-4 flex flex-col gap-4">
         <div className="uppercase text-xs text-gray-400 my-2">Shop Information</div>
         <div className="flex flex-row text-gray-500 gap-3">
-          <div className="text-sm w-32">Shop Handle *</div>
+          <div className="text-sm w-56">Shop Handle *</div>
           <TextInput placeholder={'A unique handle to your shop'} setValue={setHandle} isAlpha={true} />
         </div>
         <div className="flex flex-row text-gray-500 gap-3">
-          <div className="text-sm w-32">Shop Name *</div>
+          <div className="text-sm w-56">Shop Name *</div>
           <TextInput placeholder={'A beautiful name'} setValue={setName} />
         </div>
         <div className="flex flex-row text-gray-500 gap-3">
-          <div className="text-sm w-32">Shop Logo *</div>
+          <div className="text-sm w-56">Shop Logo *</div>
           <div>
             <FileUpload onlyImages={true} maxFiles={1} setFiles={(value) => setLogo(value.length ? value.slice(-1)[0] : undefined)} />
             {
@@ -145,37 +144,37 @@ export default function CreateShop() {
           </div>
         </div>
         <div className="flex flex-row text-gray-500 gap-3">
-          <div className="text-sm w-32">Tagline *</div>
+          <div className="text-sm w-56">Tagline *</div>
           <TextInput placeholder={'Your shop, summed up in a line'} setValue={setTagline} />
         </div>
         <div className="flex flex-row text-gray-500 gap-3">
-          <div className="text-sm w-32">Description *</div>
+          <div className="text-sm w-56">Description *</div>
           <TextArea placeholder={'A brief description'} setValue={setDescription} />
         </div>
-        <div className="uppercase text-xs text-gray-400 my-2 mt-8">Beneficiaries and Shares (%)</div>
+        <div className="uppercase text-xs text-gray-400 my-2 mt-8">Beneficiaries and Shares (%) *</div>
         {benificiaries.map((x, i) => (<div key={`benificiary-${i}`} className="flex flex-row text-gray-500 gap-3">
-          <div className="text-sm w-32">Beneficiary {i + 1}*</div>
+          <div className="text-sm w-56">Beneficiary {i + 1}</div>
           <BenificiaryInput setValue={(value) => addBeneficiary(i, value)} isOwner={(i == 0)} />
         </div>))}
         <div className="uppercase text-xs text-gray-400 my-2 mt-8">Shop Contacts</div>
         <div className="flex flex-row text-gray-500 gap-3">
-          <div className="text-sm w-32">Website</div>
+          <div className="text-sm w-56">Website</div>
           <TextInput placeholder={'http://something.cool'} setValue={setWebsite} />
         </div>
         <div className="flex flex-row text-gray-500 gap-3">
-          <div className="text-sm w-32">Twitter</div>
+          <div className="text-sm w-56">Twitter</div>
           <TextInput placeholder={'http://twitter.com/someone'} setValue={setTwitter} />
         </div>
         <div className="flex flex-row text-gray-500 gap-3">
-          <div className="text-sm w-32">Discord</div>
+          <div className="text-sm w-56">Discord</div>
           <TextInput placeholder={'http://discord.com/someone'} setValue={setDiscord} />
         </div>
         <div className="flex flex-row text-gray-500 gap-3">
-          <div className="text-sm w-32">Youtube</div>
+          <div className="text-sm w-56">Youtube</div>
           <TextInput placeholder={'http://youtube.com/someone'} setValue={setYoutube} />
         </div>
         <div className="flex flex-row text-gray-500 gap-3">
-          <div className="text-sm w-32">Spotify</div>
+          <div className="text-sm w-56">Spotify</div>
           <TextInput placeholder={'https://spotify.com/something'} setValue={setSpotify} />
         </div>
       </div>

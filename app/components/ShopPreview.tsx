@@ -2,8 +2,8 @@ import { IShopDesc, IShopInfo } from "../lib/types"
 import { trimHash, unPackIPFS } from "../lib/utils"
 import Image from "next/image"
 import { useState } from "react"
-import { useIPFS } from "../lib/miscHooks"
 import useAsyncEffect from "use-async-effect"
+import { useIPFS } from "../lib/hooks"
 
 export function ShopPreview({ shopInfo }: {
   shopInfo: IShopInfo

@@ -2,7 +2,7 @@ import { useMetaMask } from 'metamask-react'
 import Link from 'next/link'
 import { ShopPreview } from '../../components/ShopPreview'
 import { Button } from '../../components/UIComp'
-import { useOwnerShopList } from '../../lib/contractHooks'
+import { useOwnerShopList } from '../../lib/hooks'
 
 export default function MyShops() {
   const { account } = useMetaMask()
