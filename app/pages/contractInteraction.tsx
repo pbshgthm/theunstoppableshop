@@ -7,6 +7,8 @@ import {
   addRating,
   addMumbai,
 } from "../lib/contractCalls";
+
+import { getEmbedding } from "../lib/spiceHooks";
 import { useMetaMask } from "metamask-react";
 import { ethers } from "ethers";
 
@@ -65,11 +67,14 @@ const appInfo: NextPage = () => {
       </button> */}
       <br />
       <br />
-      <button onClick={async () => await addMumbai(ethereum)}>
+      {/* <button onClick={async () => await addMumbai(ethereum)}>
         Add mumbai
+      </button> */}
+      <br />
+      <br />
+      <button onClick={() => getEmbedding(0, 0, "0.0021", ethereum)}>
+        getSignature
       </button>
-      <br />
-      <br />
       <br />
       <br />
       <br />

@@ -31,22 +31,22 @@ async function main() {
 
   // We get the contract to deploy
   // const Oracle = await hre.ethers.getContractFactory("UnlockOracleClient");
-  // const ShopFactory = await hre.ethers.getContractFactory("ShopFactory");
+  const ShopFactory = await hre.ethers.getContractFactory("ShopFactory");
   const Guild = await hre.ethers.getContractFactory("Guild");
   // const oracle = await Oracle.deploy();
   // await oracle.deployed();
-  // const shopFactory = await ShopFactory.deploy();
-  // await shopFactory.deployed();
-  const guild = await Guild.deploy(oracleAddress, shopFactoryAddress);
+  const shopFactory = await ShopFactory.deploy();
+  await shopFactory.deployed();
+  const guild = await Guild.deploy(oracleAddress, shopFactory.address);
   await guild.deployed();
 
   console.log("Oracle deployed to:", oracleAddress);
-  console.log("ShopFactory deployed to:", shopFactoryAddress);
+  console.log("ShopFactory deployed to:", shopFactory.address);
   console.log("Guild deployed to:", guild.address);
 
-  const oracleBalance = await linkToken.balanceOf(oracle.address);
+  // const oracleBalance = await linkToken.balanceOf(oracle.address);
 
-  console.log("Balance:", ethers.utils.formatEther(oracleBalance));
+  // console.log("Balance:", ethers.utils.formatEther(oracleBalance));
 
   // console.log("Sending link to oracle");
   // let txn = await linkToken.transfer(
@@ -108,26 +108,26 @@ async function main() {
   console.log("Product created");
 
   txn = await guild.checkoutCart(
-    [[0, 0, ethers.utils.parseEther("0.0001")]],
+    [[0, 0, ethers.utils.parseEther("0.0021")]],
     "bW5KZDNRSWZFREIrcFlDOHJ2Nk55dTNvM3pqUnlCbHpDZ3dMb1pTQXBFRT0=",
     0,
-    { value: ethers.utils.parseEther("0.0001") }
+    { value: ethers.utils.parseEther("0.0021") }
   );
 
   await txn.wait();
 
   console.log("Checkout completed");
 
-  txn = await guild.checkoutCart(
-    [[0, 0, ethers.utils.parseEther("0.0001")]],
-    "",
-    0,
-    { value: ethers.utils.parseEther("0.0001") }
-  );
+  // txn = await guild.checkoutCart(
+  //   [[0, 0, ethers.utils.parseEther("0.0001")]],
+  //   "",
+  //   0,
+  //   { value: ethers.utils.parseEther("0.0001") }
+  // );
 
-  await txn.wait();
+  // await txn.wait();
 
-  console.log("Checkout completed");
+  // console.log("Checkout completed");
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -4,9 +4,7 @@ import useSWR from "swr";
 import { chainLinkABI } from "./link-abi";
 import { payableABI } from "./payable-abi";
 
-import { output as guildABI } from "./abi/guildABI.json";
-import { output as shopFactoryABI } from "./abi/shopFactoryABI.json";
-import { output as oracleABI } from "./abi/oracleABI.json";
+import "./abi/Guild.json";
 
 const rpcApi =
   "https://polygon-mumbai.g.alchemy.com/v2/9rE76R64EAB61z4CE3BTnMwza-7R4HiV";
@@ -250,3 +248,4 @@ export async function tempProductSale(shopId = 0, productId = 0) {
 
   return productSaleInfos;
 }
+export {};

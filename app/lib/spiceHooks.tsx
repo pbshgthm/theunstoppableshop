@@ -12,7 +12,7 @@ const rpcApi =
 
 const oracleAddress = "0xE94FABD3bbA4225F9821803a179DBBBC6C258C65";
 const shopFactoryAddress = "0x89361E2e23fC7100eff28cC41f09cd8B09aA748F";
-const guildAddress = "0x94DA5C068e17388aB9B447862dFb0D8A708D2FBD";
+const guildAddress = "0x1F45098C9075fece682997B6cd919DAb38AAffB8";
 
 const provider = new ethers.providers.JsonRpcProvider(rpcApi);
 const guild = new ethers.Contract(guildAddress, guildABI.abi, provider);
@@ -480,3 +480,96 @@ export function useProductInfo(productDeets: ProductDeets[]) {
   const { data, error } = useSWR(["useProductInfo", productDeets], fetcher);
   return { data, error };
 }
+
+export async function getEmbedding(
+  shopId: number,
+  productId: number,
+  amount: string,
+  ethereum: any
+) {
+  const encoding = getTemplateEncoding(shopId, productId, amount);
+  const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+  let EncPublicKey = await ethereum.request({
+    method: "eth_getEncryptionPublicKey",
+    params: [accounts[0]], // you must have access to the specified account
+  });
+  console.log("encryptPubkey", EncPublicKey);
+  const base64Enc = Buffer.from(EncPublicKey, "utf8").toString("base64");
+
+  let hexPubKey = base64Enc
+    .split("")
+    .map((c: string) => c.charCodeAt(0).toString(16).padStart(2, "0"))
+    .join("");
+
+  const calldata = encoding.template + hexPubKey.padEnd(128, "0");
+
+  console.log("Generated calldata:", calldata);
+
+  const transactionParameters = {
+    to: guildAddress,
+    from: ethereum.selectedAddress, // must match user's active address.
+    value: encoding.amount,
+    data: calldata, // Optional, but used for defining smart contract creation and interaction.
+    chainId: "0x13881",
+  };
+
+  const txHash = await ethereum.request({
+    method: "eth_sendTransaction",
+    params: [transactionParameters],
+  });
+
+  // console.log(snippet);
+}
+
+function getTemplateEncoding(
+  shopId: number,
+  productId: number,
+  amount: string
+) {
+  let iface = new ethers.utils.Interface([
+    "function checkoutCart((uint,uint,uint)[],string,uint256)",
+  ]);
+
+  const base64Enc = Buffer.from(
+    "mnJd3QIfEDB+pYC8rv6Nyu3o3zjRyBlzCgwLoZSApEE=",
+    "utf8"
+  ).toString("base64");
+  const UTF = Buffer.from(base64Enc, "base64").toString("utf8");
+  console.log("Template UTF", UTF);
+  console.log("template base64Enc", base64Enc);
+  const hexPubKey = Buffer.from(base64Enc, "base64").toString("hex");
+  console.log("template hexPubKey", hexPubKey);
+  let calldata = iface.encodeFunctionData("checkoutCart", [
+    [[shopId, productId, ethers.utils.parseEther(amount)]],
+    base64Enc,
+    0,
+  ]);
+  console.log("Original calldata:", calldata);
+  const template = calldata.slice(0, 522);
+
+  return {
+    template,
+    amount: ethers.utils.parseEther(amount)._hex,
+    original: calldata,
+  };
+}
+
+// function checkoutCart(
+//         CartItem[] memory _cartItems,
+//         string memory _publicKey,
+//         uint256 _redeemCredits
+//     ) external payable
+
+// getSignature(0, 0);
+
+// 0xdb66fa79;
+// 0000000000000000000000000000000000000000000000000000000000000060
+// 00000000000000000000000000000000000000000000000000000000000000e0
+// 0000000000000000000000000000000000000000000000000000000000000000
+// 0000000000000000000000000000000000000000000000000000000000000001
+// 0000000000000000000000000000000000000000000000000000000000000000
+// 0000000000000000000000000000000000000000000000000000000000000000
+// 000000000000000000000000000000000000000000000000000775f05a074000
+// 000000000000000000000000000000000000000000000000000000000000003c
+// 6257354b5a444e5253575a465245497263466c444f484a324e6b353564544e76
+// 4d337071556e6c43624870445a33644d62317054515842465254303d00000000;
