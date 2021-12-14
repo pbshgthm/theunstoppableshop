@@ -104,4 +104,4 @@ dist
 .tern-port
 
 #hardhat
-hardhat/hardhat.config.js
+hardhat.config.js
