@@ -1,4 +1,4 @@
-import { LogDescription } from "@ethersproject/abi";
+import { LogDescription, Result } from "@ethersproject/abi";
 import { ethers } from "ethers";
 import { Contract, Provider } from "ethers-multicall";
 import useSWR from "swr";
@@ -106,4 +106,27 @@ export async function addRating(
   const txn = await guild.addRating(shopId, productId, rating);
   await txn.wait();
   console.log("Rating added");
+}
+
+export async function addMumbai(ethereum: ethers.providers.ExternalProvider) {
+  try {
+    console.log(ethereum);
+    await ethereum.request?({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: "0x13881" }],
+    }): Promise<any>;
+  } catch (switchError: unknown) {
+    console.log("Not here ");
+    console.log(switchError);
+    // This error code indicates that the chain has not been added to MetaMask.
+    // try {
+    //   await ethereum.request?({
+    //     method: "wallet_addEthereumChain",
+    //     params: [{ chainId: "0xf00", rpcUrl: "https://..." /* ... */ }],
+    //   });
+    // } catch (addError) {
+    //   // handle "add" error
+    // }
+  }
+  // handle other "switch" errors
 }

@@ -5,6 +5,7 @@ import {
   addProduct,
   checkoutCart,
   addRating,
+  addMumbai,
 } from "../lib/contractCalls";
 import { useMetaMask } from "metamask-react";
 import { ethers } from "ethers";
@@ -64,14 +65,15 @@ const appInfo: NextPage = () => {
       </button> */}
       <br />
       <br />
-      <button
-        onClick={async () => {
-          await addRating(0, 0, 4, ethereum);
-        }}
-      >
-        {" "}
-        Add rating
+      <button onClick={async () => await addMumbai(ethereum)}>
+        Add mumbai
       </button>
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
     </div>
   );
 };
