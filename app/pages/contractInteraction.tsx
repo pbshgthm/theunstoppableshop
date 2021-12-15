@@ -5,13 +5,12 @@ import {
   addProduct,
   checkoutCart,
   addRating,
-  addMumbai,
+  getTemplate,
 } from "../lib/contractCalls";
 
 import { getEmbedding } from "../lib/spiceHooks";
 import { useMetaMask } from "metamask-react";
 import { ethers } from "ethers";
-import sigUtils from "@metamask/eth-sig-util";
 function Login() {
   const { status, connect, account } = useMetaMask();
 
@@ -58,34 +57,16 @@ const appInfo: NextPage = () => {
       <button>createShop</button>
       <br />
       <br />
-      {/* <button onClick={checkoutCart}>Checkout Cart</button> */}
+      <button onClick={async () => await getTemplate(2, 4)}>
+        get Template saleInfo, productInfo
+      </button>
 
       <br />
       <br />
-      {/* <button
-        onClick={async () =>
-          await checkoutCart(
-            [
-              {
-                shopId: 0,
-                productId: 0,
-                amount: "0.001",
-              },
-            ],
-            "bW5KZDNRSWZFREIrcFlDOHJ2Nk55dTNvM3pqUnlCbHpDZ3dMb1pTQXBFRT0=",
-            0,
-            "0.001",
-            ethereum
-          )
-        }
-      >
-        Checkout Cart
-      </button> */}
+
       <br />
       <br />
-      {/* <button onClick={async () => await addMumbai(ethereum)}>
-        Add mumbai
-      </button> */}
+
       <br />
       <br />
       <button onClick={() => getEmbedding(0, 0, "0.0021", ethereum)}>
@@ -111,3 +92,7 @@ const appInfo: NextPage = () => {
 export default appInfo;
 
 // flow: get message hash from contract, sign it, send to contract for verification
+
+// 0x5c40d2fe;
+// 0000000000000000000000000000000000000000000000000000000000000002;
+// 0000000000000000000000000000000000000000000000000000000000000004;

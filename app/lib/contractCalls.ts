@@ -108,37 +108,16 @@ export async function addRating(
   console.log("Rating added");
 }
 
-export async function addMumbai(ethereum: ethers.providers.ExternalProvider) {
-  try {
-    console.log(ethereum);
-    await ethereum.request?({
-      method: "wallet_switchEthereumChain",
-      params: [{ chainId: "0x13881" }],
-    }): Promise<any>;
-  } catch (switchError: unknown) {
-    console.log("Not here ");
-    console.log(switchError);
-    // This error code indicates that the chain has not been added to MetaMask.
-    // try {
-    //   await ethereum.request?({
-    //     method: "wallet_addEthereumChain",
-    //     params: [{ chainId: "0xf00", rpcUrl: "https://..." /* ... */ }],
-    //   });
-    // } catch (addError) {
-    //   // handle "add" error
-    // }
-  }
-  // handle other "switch" errors
-}
+
+
+export async function getTemplate(shopId: number, productId: number) {
+  let iface = new ethers.utils.Interface([
+    "function getSaleInfo(uint,uint)",
+  ]);
 
   
-  // export async function signData(hash: string | null, discountAddress: string | null, ethereum:any) {
-  //   const sign = await ethereum.request({
-  //     method: "personal_sign",
-  //     params: [discountAddress, hash],
-  //   });
-  //   console.log("sign", sign);
-   
-  // }
-
+  let calldata = iface.encodeFunctionData("getSaleInfo", [shopId, productId]);
+  console.log("SaleInfo",calldata);
+  
+}
 
