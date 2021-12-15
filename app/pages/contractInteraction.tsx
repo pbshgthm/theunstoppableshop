@@ -11,7 +11,7 @@ import {
 import { getEmbedding } from "../lib/spiceHooks";
 import { useMetaMask } from "metamask-react";
 import { ethers } from "ethers";
-
+import sigUtils from "@metamask/eth-sig-util";
 function Login() {
   const { status, connect, account } = useMetaMask();
 
@@ -30,7 +30,23 @@ function Login() {
 }
 
 const appInfo: NextPage = () => {
+  const guildAddress = "0xd5c879EfDB2C9174165C493639cf8B40EaCE09f1";
   const { status, connect, account, ethereum } = useMetaMask();
+
+  async function signData(hash: string | null) {
+    const sign = await ethereum.request({
+      method: "personal_sign",
+      params: [account, hash],
+    });
+    console.log(sign);
+    // sigUtils.signTypedData({
+    //   data: account,
+    //   privateKey: Buffer.from(
+    //
+    //     "utf8"
+    //   ),
+    // });
+  }
 
   return (
     <div>
@@ -73,38 +89,25 @@ const appInfo: NextPage = () => {
       <br />
       <br />
       <button onClick={() => getEmbedding(0, 0, "0.0021", ethereum)}>
-        getSignature
+        getEmbedding
       </button>
       <br />
       <br />
+      <button
+        onClick={async () =>
+          await signData(
+            "0x264bc59dc56a96d1f7e5e885cb8f0d4d7f95889b36100c770da2603edcde59d7"
+          )
+        }
+      >
+        signMessageHash
+      </button>
       <br />
       <br />
     </div>
   );
 };
-
+// 0x682ec112fe5d1d2a44d542aa8ebda59d2c6e87f17e74501da625de7e955b8f2d262566c098710c48435ee08b6c7755045adb859f1365af0526df3187bc3df97f1b;
 export default appInfo;
 
-{
-  /* 
- [[0, 0, ethers.utils.parseEther("0.0001")]],
-    "",
-    0,
-    { value: ethers.utils.parseEther("0.0001") } */
-}
-
-{
-  /* cartItems: CartItems[], */
-}
-{
-  /* publicKey: string, */
-}
-{
-  /* redeemCredits: number, */
-}
-{
-  /* totalAmount: number, */
-}
-{
-  /* ethereum: ethers.providers.ExternalProvider */
-}
+// flow: get message hash from contract, sign it, send to contract for verification

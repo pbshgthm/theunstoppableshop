@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 
 pragma solidity ^0.8.7;
+import "hardhat/console.sol";
 
 interface IShopFactory {
     function createShop(
@@ -86,6 +87,16 @@ interface IShop {
 
     function getRefund(uint256 _saleId) external payable;
 
+    function getDiscountPercent(uint256 _productId, address _discountAddress)
+        external
+        view
+        returns (uint256);
+
+    function getProductDiscountKey(uint256 _productId)
+        external
+        view
+        returns (string memory);
+
     function getShopInfo()
         external
         view
@@ -96,7 +107,16 @@ interface IShop {
         string memory _lockedLicense,
         string memory _sellerLicense,
         uint256 _price,
-        uint256 _stock
+        uint256 _stock,
+        address _discountAddress,
+        uint256 _discountPercent,
+        string memory _encDiscountKey
+    ) external;
+
+    function addDiscount(
+        uint256 _productId,
+        address _discountAddress,
+        uint256 _percent
     ) external;
 
     function addRating(uint256 _saleId, RatingOptions _rating) external;
@@ -130,6 +150,13 @@ interface IUnlockOracleClient {
     function getApiPublicKey() external view returns (string memory);
 }
 
+interface ISignature {
+    function getSigner(address _message, bytes memory _signature)
+        external
+        view
+        returns (address);
+}
+
 contract Guild {
     struct UnlockRequest {
         uint256 requestId;
@@ -145,6 +172,7 @@ contract Guild {
 
     address owner;
     address oracleClient;
+    address signatureAddress;
     address public shopFactory;
     address[] public shops;
     uint256 ratingReward = 0.001 ether; // CHANGE IT
@@ -199,11 +227,16 @@ contract Guild {
         _;
     }
 
-    constructor(address _oracleClient, address _shopFactory) {
+    constructor(
+        address _oracleClient,
+        address _shopFactory,
+        address _signatureAddress
+    ) {
         owner = msg.sender;
         oracleClient = _oracleClient;
         shopFactory = _shopFactory;
         FactoryInterface = IShopFactory(shopFactory);
+        signatureAddress = _signatureAddress;
     }
 
     function changeOracle(address _oracle) external onlyOwner {
@@ -264,19 +297,56 @@ contract Guild {
         string memory _lockedLicense,
         string memory _sellerLicense,
         uint256 _price,
-        uint256 _stock
+        uint256 _stock,
+        address _discountAddress,
+        uint256 _discountPercent,
+        string memory _encDiscountKey
     ) public onlyShopOwner(_shopId) {
         IShop(shops[_shopId]).addProduct(
             _contentCID,
             _lockedLicense,
             _sellerLicense,
             _price,
-            _stock
+            _stock,
+            _discountAddress,
+            _discountPercent,
+            _encDiscountKey
         );
         emit ProductCreated(
             _shopId,
             IShop(shops[_shopId]).getProductsCount() - 1
         );
+    }
+
+    function addDiscount(
+        uint256 _shopId,
+        uint256 _productId,
+        address _discountAddress,
+        uint256 _percent
+    ) external onlyShopOwner(_shopId) {
+        IShop(shops[_shopId]).addDiscount(
+            _productId,
+            _discountAddress,
+            _percent
+        );
+    }
+
+    function getDiscount(
+        uint256 _shopId,
+        uint256 _productId,
+        bytes memory _signature
+    ) public view returns (uint256) {
+        address discountAddress = ISignature(signatureAddress).getSigner(
+            msg.sender,
+            _signature
+        );
+        console.log(discountAddress);
+
+        return
+            IShop(shops[_shopId]).getDiscountPercent(
+                _productId,
+                discountAddress
+            );
     }
 
     function requestSale(
@@ -471,14 +541,6 @@ contract Guild {
     {
         return IShop(shops[_shopId]).getProducts();
     }
-
-    // function getBeneficiaries(uint256 _shopId)
-    //     external
-    //     view
-    //     returns (IShop.Beneficiary[] memory)
-    // {
-    //     return IShop(shops[_shopId]).getBeneficiaries();
-    // }
 
     function getApiPublicKey() external view returns (string memory) {
         return IUnlockOracleClient(oracleClient).getApiPublicKey();

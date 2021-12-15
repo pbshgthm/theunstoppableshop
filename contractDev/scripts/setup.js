@@ -33,11 +33,18 @@ async function main() {
   // const Oracle = await hre.ethers.getContractFactory("UnlockOracleClient");
   const ShopFactory = await hre.ethers.getContractFactory("ShopFactory");
   const Guild = await hre.ethers.getContractFactory("Guild");
+  const Signature = await hre.ethers.getContractFactory("Signature");
   // const oracle = await Oracle.deploy();
   // await oracle.deployed();
   const shopFactory = await ShopFactory.deploy();
   await shopFactory.deployed();
-  const guild = await Guild.deploy(oracleAddress, shopFactory.address);
+  const signature = await Signature.deploy();
+  await signature.deployed();
+  const guild = await Guild.deploy(
+    oracleAddress,
+    shopFactory.address,
+    signature.address
+  );
   await guild.deployed();
 
   console.log("Oracle deployed to:", oracleAddress);
@@ -69,18 +76,31 @@ async function main() {
 
   console.log("Shop created");
 
-  txn = await guild.createShop(
-    "sushi2",
-    "deets2",
-    [
-      ["0x14ab838b241F234C51E7Ee2d6F077b50605b0003", 50],
-      ["0xDa69589145AEBaa0cDae6dAC6512Db0363F44B70", 50],
-    ],
-    "bW5KZDNRSWZFREIrcFlDOHJ2Nk55dTNvM3pqUnlCbHpDZ3dMb1pTQXBFRT0="
-  );
-  await txn.wait();
+  // txn = await guild.createShop(
+  //   "sushi2",
+  //   "deets2",
+  //   [
+  //     ["0x14ab838b241F234C51E7Ee2d6F077b50605b0003", 50],
+  //     ["0xDa69589145AEBaa0cDae6dAC6512Db0363F44B70", 50],
+  //   ],
+  //   "bW5KZDNRSWZFREIrcFlDOHJ2Nk55dTNvM3pqUnlCbHpDZ3dMb1pTQXBFRT0="
+  // );
+  // await txn.wait();
 
-  console.log("Shop created");
+  // console.log("Shop created");
+
+  // txn = await guild.addProduct(
+  //   0,
+  //   ["contenCID"],
+  //   "eyJ2ZXJzaW9uIjoieDI1NTE5LXhzYWxzYTIwLXBvbHkxMzA1Iiwibm9uY2UiOiJHSHJndVZnM1FlSHB4c3VVQUI0QTNoUFluMFdNQkVHUSIsImVwaGVtUHVibGljS2V5IjoiODRkMHY5N1RrM240YkJjcnF6ajU4QThOWjMvQmJ1MXB1b2p2N2RTaUpEWT0iLCJjaXBoZXJ0ZXh0IjoiWVVxS3d3RGo4M0c2d1ZGUjZLeXBzRXVFaEoxK2FJSkFaeXJUTjR6aE9xbTlkbmVOZU4ydTVsNFNLMXdud2N6VCJ9",
+  //   "eyJ2ZXJzaW9uIjoieDI1NTE5LXhzYWxzYTIwLXBvbHkxMzA1Iiwibm9uY2UiOiJHSHJndVZnM1FlSHB4c3VVQUI0QTNoUFluMFdNQkVHUSIsImVwaGVtUHVibGljS2V5IjoiODRkMHY5N1RrM240YkJjcnF6ajU4QThOWjMvQmJ1MXB1b2p2N2RTaUpEWT0iLCJjaXBoZXJ0ZXh0IjoiWVVxS3d3RGo4M0c2d1ZGUjZLeXBzRXVFaEoxK2FJSkFaeXJUTjR6aE9xbTlkbmVOZU4ydTVsNFNLMXdud2N6VCJ9",
+  //   ethers.utils.parseEther("0.0001"),
+  //   100
+  // );
+
+  // await txn.wait();
+
+  // console.log("Product created");
 
   txn = await guild.addProduct(
     0,
@@ -88,35 +108,42 @@ async function main() {
     "eyJ2ZXJzaW9uIjoieDI1NTE5LXhzYWxzYTIwLXBvbHkxMzA1Iiwibm9uY2UiOiJHSHJndVZnM1FlSHB4c3VVQUI0QTNoUFluMFdNQkVHUSIsImVwaGVtUHVibGljS2V5IjoiODRkMHY5N1RrM240YkJjcnF6ajU4QThOWjMvQmJ1MXB1b2p2N2RTaUpEWT0iLCJjaXBoZXJ0ZXh0IjoiWVVxS3d3RGo4M0c2d1ZGUjZLeXBzRXVFaEoxK2FJSkFaeXJUTjR6aE9xbTlkbmVOZU4ydTVsNFNLMXdud2N6VCJ9",
     "eyJ2ZXJzaW9uIjoieDI1NTE5LXhzYWxzYTIwLXBvbHkxMzA1Iiwibm9uY2UiOiJHSHJndVZnM1FlSHB4c3VVQUI0QTNoUFluMFdNQkVHUSIsImVwaGVtUHVibGljS2V5IjoiODRkMHY5N1RrM240YkJjcnF6ajU4QThOWjMvQmJ1MXB1b2p2N2RTaUpEWT0iLCJjaXBoZXJ0ZXh0IjoiWVVxS3d3RGo4M0c2d1ZGUjZLeXBzRXVFaEoxK2FJSkFaeXJUTjR6aE9xbTlkbmVOZU4ydTVsNFNLMXdud2N6VCJ9",
     ethers.utils.parseEther("0.0001"),
-    100
-  );
-
-  await txn.wait();
-
-  console.log("Product created");
-
-  txn = await guild.addProduct(
-    0,
-    ["contenCID"],
-    "eyJ2ZXJzaW9uIjoieDI1NTE5LXhzYWxzYTIwLXBvbHkxMzA1Iiwibm9uY2UiOiJHSHJndVZnM1FlSHB4c3VVQUI0QTNoUFluMFdNQkVHUSIsImVwaGVtUHVibGljS2V5IjoiODRkMHY5N1RrM240YkJjcnF6ajU4QThOWjMvQmJ1MXB1b2p2N2RTaUpEWT0iLCJjaXBoZXJ0ZXh0IjoiWVVxS3d3RGo4M0c2d1ZGUjZLeXBzRXVFaEoxK2FJSkFaeXJUTjR6aE9xbTlkbmVOZU4ydTVsNFNLMXdud2N6VCJ9",
-    "eyJ2ZXJzaW9uIjoieDI1NTE5LXhzYWxzYTIwLXBvbHkxMzA1Iiwibm9uY2UiOiJHSHJndVZnM1FlSHB4c3VVQUI0QTNoUFluMFdNQkVHUSIsImVwaGVtUHVibGljS2V5IjoiODRkMHY5N1RrM240YkJjcnF6ajU4QThOWjMvQmJ1MXB1b2p2N2RTaUpEWT0iLCJjaXBoZXJ0ZXh0IjoiWVVxS3d3RGo4M0c2d1ZGUjZLeXBzRXVFaEoxK2FJSkFaeXJUTjR6aE9xbTlkbmVOZU4ydTVsNFNLMXdud2N6VCJ9",
-    ethers.utils.parseEther("0.0001"),
-    100
+    100,
+    "0x14ab838b241F234C51E7Ee2d6F077b50605b0003",
+    50,
+    "encDiscountKey"
   );
   await txn.wait();
 
   console.log("Product created");
 
-  txn = await guild.checkoutCart(
-    [[0, 0, ethers.utils.parseEther("0.0021")]],
-    "bW5KZDNRSWZFREIrcFlDOHJ2Nk55dTNvM3pqUnlCbHpDZ3dMb1pTQXBFRT0=",
+  // txn = await guild.addDiscount(
+  //   0,
+  //   0,
+  //   "0x14ab838b241F234C51E7Ee2d6F077b50605b0003",
+  //   50
+  // );
+  // await txn.wait();
+
+  // console.log("Discount created");
+
+  const percent = await guild.getDiscount(
     0,
-    { value: ethers.utils.parseEther("0.0021") }
+    0,
+    "0x266bc53048746775f1440944b9521309a2819c78276c15e03581db7a6bb818ed41d45f265f140c55408a4b08e54262e9303ccf125a68161af2b43603bfec3e541b"
   );
+  console.log(percent);
 
-  await txn.wait();
+  // txn = await guild.checkoutCart(
+  //   [[0, 0, ethers.utils.parseEther("0.0021")]],
+  //   "bW5KZDNRSWZFREIrcFlDOHJ2Nk55dTNvM3pqUnlCbHpDZ3dMb1pTQXBFRT0=",
+  //   0,
+  //   { value: ethers.utils.parseEther("0.0021") }
+  // );
 
-  console.log("Checkout completed");
+  // await txn.wait();
+
+  // console.log("Checkout completed");
 
   // txn = await guild.checkoutCart(
   //   [[0, 0, ethers.utils.parseEther("0.0001")]],

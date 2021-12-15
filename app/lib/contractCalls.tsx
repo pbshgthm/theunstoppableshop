@@ -130,3 +130,15 @@ export async function addMumbai(ethereum: ethers.providers.ExternalProvider) {
   }
   // handle other "switch" errors
 }
+
+  
+  // export async function signData(hash: string | null, discountAddress: string | null, ethereum:any) {
+  //   const sign = await ethereum.request({
+  //     method: "personal_sign",
+  //     params: [discountAddress, hash],
+  //   });
+  //   console.log("sign", sign);
+   
+  // }
+
+

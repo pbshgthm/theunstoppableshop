@@ -11,7 +11,6 @@ contract Shop {
         address payable addr;
         uint8 share;
     }
-
     struct Product {
         string[] contentCID;
         string lockedLicense;
@@ -71,6 +70,10 @@ contract Shop {
     mapping(uint256 => Sale) sales;
     mapping(uint256 => uint256) openSaleIdToIndex;
 
+    mapping(uint256 => mapping(address => uint256))
+        public productDiscountPercent;
+
+    mapping(uint256 => string) public productDiscountKey;
     modifier onlyGuild() {
         require(
             msg.sender == shopInfo.guild,
@@ -107,7 +110,10 @@ contract Shop {
         string memory _lockedLicense,
         string memory _sellerLicense,
         uint256 _price,
-        uint256 _stock
+        uint256 _stock,
+        address _discountAddress,
+        uint256 _discountPercent,
+        string memory _encDiscountKey
     ) external onlyGuild {
         require(
             _contentCID.length == 1,
@@ -128,6 +134,11 @@ contract Shop {
                 sellerLicense: _sellerLicense
             })
         );
+
+        productDiscountPercent[products.length - 1][
+            _discountAddress
+        ] = _discountPercent;
+        productDiscountKey[products.length - 1] = _encDiscountKey;
         shopInfo.productsCount++;
     }
 
@@ -142,6 +153,23 @@ contract Shop {
         products[_productId].price = _price;
         products[_productId].stock = _stock;
         products[_productId].isAvailable = _isAvailable;
+    }
+
+    function addDiscount(
+        uint256 _productId,
+        address _discountAddress,
+        uint256 _percent
+    ) external onlyGuild {
+        require(
+            _discountAddress != address(0),
+            "Discount code must be a valid address"
+        );
+        require(
+            _percent >= 0 && _percent <= 100,
+            "Discount percent must be between 0 and 100"
+        );
+
+        productDiscountPercent[_productId][_discountAddress] = _percent;
     }
 
     function requestSale(
@@ -310,5 +338,21 @@ contract Shop {
 
     function getProducts() external view returns (Product[] memory) {
         return products;
+    }
+
+    function getDiscountPercent(uint256 _productId, address _discountAddress)
+        external
+        view
+        returns (uint256)
+    {
+        return productDiscountPercent[_productId][_discountAddress];
+    }
+
+    function getProductDiscountKey(uint256 _productId)
+        external
+        view
+        returns (string memory)
+    {
+        return productDiscountKey[_productId];
     }
 }
