@@ -41,6 +41,9 @@ export async function addProduct(
   sellerLicense: string,
   price: string,
   stock: number,
+  discountKeyAdd: string,
+  discountPercent: number,
+  encDiscountKey: string,
   ethereum: ethers.providers.ExternalProvider
 ) {
   const signer = new ethers.providers.Web3Provider(ethereum).getSigner()
@@ -53,7 +56,10 @@ export async function addProduct(
       lockedLicense,
       sellerLicense,
       ethers.utils.parseEther(price),
-      stock
+      stock,
+      discountKeyAdd,
+      discountPercent,
+      encDiscountKey,
     )
     await txn.wait()
     return { success: true, error: '' }
@@ -117,7 +123,21 @@ export async function addRating(
 ) {
   const signer = new ethers.providers.Web3Provider(ethereum).getSigner()
   const guild = new ethers.Contract(config.guildAddress, guildABI, signer)
-  const txn = await guild.addRating(shopId, saleId, rating)
-  await txn.wait()
-  console.log("Rating added")
+  try {
+    const txn = await guild.addRating(shopId, saleId, rating)
+    await txn.wait()
+    return { success: true, error: '' }
+  } catch (err) {
+    const error = err as any
+    let errorMessage = ''
+    try {
+      errorMessage = error.data.message.replace('execution reverted: ', '')
+    } catch {
+      errorMessage = error.message
+      if (errorMessage === 'MetaMask Tx Signature: User denied transaction signature.')
+        errorMessage = "You've denied transaction signature :("
+    }
+    return { success: false, error: errorMessage }
+  }
+
 }

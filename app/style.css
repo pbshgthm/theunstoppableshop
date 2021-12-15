@@ -4,10 +4,15 @@
 
 @font-face {
   font-family: 'Fira Code';
-  src: local('Fira Code'), url('/public/fonts/FiraCode-VariableFont_wght.ttf') format('ttf');
+  src: local('Fira Code'), url('/fonts/FiraCode-VariableFont_wght.ttf') format('ttf');
 }
 
 @font-face {
   font-family: 'Inter';
-  src: local('Inter'), url('/public/fonts/Inter-VariableFont_slnt,wght.ttf') format('ttf');
+  src: local('Inter'), url('/fonts/Inter-VariableFont_slnt,wght.ttf') format('ttf');
+}
+
+body{
+  overflow-x: hidden;
+  background-image: url('/assets/bg.png');
 }

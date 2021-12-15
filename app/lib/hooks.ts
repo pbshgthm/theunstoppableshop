@@ -53,6 +53,7 @@ function parseSale(saleId: number, sale: any): ISaleInfo {
   return {
     saleId,
     buyer: sale[0],
+    buyerPublicKey: sale[1],
     productId: parseInt(sale[2]),
     amount: parseInt(sale[3]),
     saleDeadline: parseInt(sale[4]),
@@ -76,8 +77,8 @@ export function useShopId(shopHandle: string | undefined) {
   async function fetcher(fn: string, handle: string) {
     return parseInt(await guild.getShopIdFromHandle(handle))
   }
-  const { data, error } = useSWR(shopHandle ? ["useShopId", shopHandle] : null, fetcher)
-  return { data, error }
+  const { data, error, mutate } = useSWR(shopHandle ? ["useShopId", shopHandle] : null, fetcher)
+  return { data, error, mutate }
 }
 
 export function useShop(shopId: number | undefined) {
@@ -85,8 +86,8 @@ export function useShop(shopId: number | undefined) {
     const [rawShop, benificiaries] = await guild.getShopInfo(id)
     return parseShop(id, rawShop, benificiaries)
   }
-  const { data, error } = useSWR(shopId !== undefined ? ["useShop", shopId] : null, fetcher)
-  return { data, error }
+  const { data, error, mutate } = useSWR(shopId !== undefined ? ["useShop", shopId] : null, fetcher)
+  return { data, error, mutate }
 }
 
 export function useShopList() {
@@ -97,8 +98,8 @@ export function useShopList() {
     const rawShops = await multiCallProvider.all(shopInfoCalls)
     return rawShops.map(([shop, ben], index) => parseShop(index, shop, ben)).reverse()
   }
-  const { data, error } = useSWR(["useShopList"], fetcher)
-  return { data, error }
+  const { data, error, mutate } = useSWR(["useShopList"], fetcher)
+  return { data, error, mutate }
 }
 
 export function useOwnerShopList(owner: string | null) {
@@ -117,8 +118,8 @@ export function useOwnerShopList(owner: string | null) {
     const rawShops = await multiCallProvider.all(shopInfoCalls)
     return rawShops.map(([shop, ben], index) => parseShop(index, shop, ben)).reverse()
   }
-  const { data, error } = useSWR(owner ? ["useOwnerShopList", owner] : null, fetcher)
-  return { data, error }
+  const { data, error, mutate } = useSWR(owner ? ["useOwnerShopList", owner] : null, fetcher)
+  return { data, error, mutate }
 }
 
 export function useProductList(shopId: number | undefined) {
@@ -126,8 +127,8 @@ export function useProductList(shopId: number | undefined) {
     const rawProducts = await guild.getProducts(id)
     return rawProducts.map((product: any, index: number) => parseProduct(index, product)).reverse() as IProductInfo[]
   }
-  const { data, error } = useSWR(shopId !== undefined ? ["useProductList", shopId] : null, fetcher)
-  return { data, error }
+  const { data, error, mutate } = useSWR(shopId !== undefined ? ["useProductList", shopId] : null, fetcher)
+  return { data, error, mutate }
 }
 
 export function useProduct(shopId: number | undefined, productId: number | undefined) {
@@ -135,8 +136,8 @@ export function useProduct(shopId: number | undefined, productId: number | undef
     const rawProduct = await guild.getProductInfo(shopId, productId)
     return parseProduct(productId, rawProduct)
   }
-  const { data, error } = useSWR(shopId !== undefined && productId !== undefined ? ["useProduct", shopId, productId] : null, fetcher)
-  return { data, error }
+  const { data, error, mutate } = useSWR(shopId !== undefined && productId !== undefined ? ["useProduct", shopId, productId] : null, fetcher)
+  return { data, error, mutate }
 }
 
 export function useCachedPublicKey(address: string | null) {
@@ -144,16 +145,16 @@ export function useCachedPublicKey(address: string | null) {
     const pubKey = await guild.publicKeys(address) as string
     return Buffer.from(pubKey, "base64").toString()
   }
-  const { data, error } = useSWR(address ? ["useCachedPublicKey", address] : null, fetcher)
-  return { data, error }
+  const { data, error, mutate } = useSWR(address ? ["useCachedPublicKey", address] : null, fetcher)
+  return { data, error, mutate }
 }
 
 export function useApiPublicKey() {
   const fetcher = async (fn: string) => {
     return await guild.getApiPublicKey() as string
   }
-  const { data, error } = useSWR(["useApiPublicKey"], fetcher)
-  return { data, error }
+  const { data, error, mutate } = useSWR(["useApiPublicKey"], fetcher)
+  return { data, error, mutate }
 }
 
 export function useGuild() {
@@ -161,14 +162,14 @@ export function useGuild() {
     const guildInfoRaw = await guild.getGuildInfo()
     return parseGuild(guildInfoRaw)
   }
-  const { data, error } = useSWR(["useGuild"], fetcher)
-  return { data, error }
+  const { data, error, mutate } = useSWR(["useGuild"], fetcher)
+  return { data, error, mutate }
 }
 
 export function useSale(
   shopId: number | undefined,
   productId: number | undefined,
-  buyer: string | undefined) {
+  buyer: string | null) {
   const fetcher = async (
     fn: string,
     _shopId: number,
@@ -190,11 +191,11 @@ export function useSale(
     const saleInfoRaw = await guild.getSaleInfo(shopId, saleId)
     return parseSale(saleId, saleInfoRaw)
   }
-  const { data, error } = useSWR(
-    shopId !== undefined && productId !== undefined && buyer !== undefined ? ["useSale", shopId, productId, buyer] : null,
+  const { data, error, mutate } = useSWR(
+    shopId !== undefined && productId !== undefined && buyer !== null ? ["useSale", shopId, productId, buyer] : null,
     fetcher
   )
-  return { data, error }
+  return { data, error, mutate }
 }
 
 
@@ -225,39 +226,52 @@ export function useBuyerProducts(buyer: string | null) {
     const shopInfos = saleLogs.map(log => parseInt(IGuild.parseLog(log).args.shopId))
 
     const saleCalls = saleInfos.map(sale => multiGuild.getSaleInfo(...sale))
-    const rawSales = await multiCallProvider.all(saleCalls)
-    const sales = rawSales.map((sale, index) => parseSale(
+    const productCalls = productInfos.map(prod => multiGuild.getProductInfo(...prod))
+    const shopInfoCalls = shopInfos.map((shopId) => multiGuild.getShopInfo(shopId))
+
+    const allCalls = [...saleCalls, ...productCalls, ...shopInfoCalls]
+    const rawResponse = await multiCallProvider.all(allCalls)
+
+    const rawSales = rawResponse.slice(0, saleCalls.length)
+    const rawProducts = rawResponse.slice(saleCalls.length, 2 * saleCalls.length)
+    const rawShops = rawResponse.slice(2 * saleCalls.length)
+
+    const sales = rawSales.map((sale: any, index: any) => parseSale(
       saleInfos[index][1],
       sale
     ))
 
-    const productCalls = productInfos.map(product => multiGuild.getProductInfo(...product))
-    const rawProducts = await multiCallProvider.all(productCalls)
-    const products = rawProducts.map((product, index) => parseProduct(
+    const products = rawProducts.map((product: any, index: any) => parseProduct(
       productInfos[index][1],
       product
     ))
 
-    const shopInfoCalls = shopInfos.map((shopId) => multiGuild.getShopInfo(shopId))
-    const rawShops = await multiCallProvider.all(shopInfoCalls)
-    const shops = rawShops.map(([shop, ben], index) => parseShop(index, shop, ben))
+    const shops = rawShops.map(([shop, ben]: [any, any], index: number) => parseShop(index, shop, ben))
 
-    return sales.map((sale, index) => ({
+    return sales.map((sale: any, index: any) => ({
       sale: sale,
       product: products[index],
       shop: shops[index]
     }))
+
   }
-  const { data, error } = useSWR(buyer ? ["useBuyerProducts", buyer] : null, fetcher)
-  return { data, error }
+  const { data, error, mutate } = useSWR(buyer ? ["useBuyerProducts", buyer] : null, fetcher)
+  return { data, error, mutate }
 
-}
-
-async function ipfsFetcher(fn: string, cid: string) {
-  return fetch(config.ipfsGateway + cid).then(res => res.blob())
 }
 
 export function useIPFS(cid: string | undefined) {
-  const { data, error } = useSWR(cid ? ['useIPFS', cid] : null, ipfsFetcher)
-  return { data, error }
+  const fetcher = async (fn: string, cid: string) => {
+    return fetch(config.ipfsGateway + cid).then(res => res.blob())
+  }
+  const { data, error, mutate } = useSWR(cid ? ['useIPFS', cid] : null, fetcher)
+  return { data, error, mutate }
+}
+
+export function useCredits(address: string | null) {
+  const fetcher = async (fn: string, address: string) => {
+    return parseFloat(ethers.utils.formatEther(await guild.buyerCredits(address)))
+  }
+  const { data, error, mutate } = useSWR(address ? ['useGuildCredits', address] : null, fetcher)
+  return { data, error, mutate }
 }

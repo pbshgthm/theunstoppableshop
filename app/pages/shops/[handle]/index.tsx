@@ -9,6 +9,9 @@ import { Button } from "../../../components/UIComp"
 import Link from "next/link"
 import { useMetaMask } from "metamask-react"
 import { ProductPreview } from "../../../components/ProductPreview"
+import { ShopSkeleton } from "../../../components/ShopPreview"
+import Library from "../../library"
+import { LibraryItemSkeleton } from "../../../components/LibraryItem"
 
 
 function SocialIcon({ name, link }: { name: string, link: string }) {
@@ -61,12 +64,12 @@ export default function Shop() {
 
   return (
     <div>
-      {shopDesc && shopInfo && (
-        <div>
+      {(shopDesc && shopInfo)
+        ? <div>
           <div className="flex flex-col p-4 text-center gap-3 rounded-xl w-64 fixed left-24 top-24">
-            {logo && <Image src={logo as string} width={232} height={232} alt={''} className="rounded-xl mb-2" objectFit="cover" />}
+            <Image src={logo || "/"} width={232} height={232} alt={''} className="rounded-xl mb-2" objectFit="cover" placeholder="blur" blurDataURL="data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mN8+B8AAscB4jINlWEAAAAASUVORK5CYII=" />
             <div className="flex flex-col gap-2">
-              <div className="mt-2 text-sm text-gray-400">@{shopInfo.handle}</div>
+              <div className="mt-2 text-sm text-gray-500">@{shopInfo.handle}</div>
               <div className="text-2xl text-gray-600 font-light">
                 {shopDesc.name}
               </div>
@@ -131,16 +134,29 @@ export default function Shop() {
               <div className="ml-4 mt-1 w-56 h-[1px] bg-orange-800"></div>
             </div>
             <div className="flex flex-col gap-12 my-12">
-              {productList && productList.reverse().map((productInfo, i) => (
-                <Link href={`/shops/${handle}/product-${productInfo.productId}`} key={`prd-${productInfo.productId}`}>
-                  <a><ProductPreview productInfo={productInfo} /></a>
-                </Link>
-              ))}
+              {productList
+                ? productList.reverse().map((productInfo, i) => (
+                  <Link href={`/shops/${handle}/product-${productInfo.productId}`} key={`prd-${productInfo.productId}-${shopId}`}>
+                    <a><ProductPreview productInfo={productInfo} /></a>
+                  </Link>
+                ))
+                : Array(2).fill(0).map((_, index) => (
+                  <LibraryItemSkeleton key={'prd-' + index} />
+                ))
+              }
+              {
+                (productList?.length === 0) &&
+                <div>
+                  <div className="text-sm text-purple-800">
+                    {"No Products added yet."}
+                  </div>
+                </div>
+              }
             </div>
           </div>
         </div>
-      )}
-      {!shopDesc}
+        : <ShopSkeleton />
+      }
     </div>
   )
 }

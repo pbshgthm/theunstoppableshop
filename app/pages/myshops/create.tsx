@@ -9,7 +9,7 @@ import { IBeneficiary, IShopDesc } from "../../lib/types"
 import { createShop } from "../../lib/contractCalls"
 import Router from 'next/router'
 import Link from "next/link"
-import { useCachedPublicKey } from "../../lib/hooks"
+import { useCachedPublicKey, useIPFS, useShop, useShopId } from "../../lib/hooks"
 
 
 const emptyBeneficiary: IBeneficiary = {
@@ -40,12 +40,23 @@ export default function CreateShop() {
 
   const [benificiaries, setBenificiaries] = useState<IBeneficiary[]>(new Array(3).fill(emptyBeneficiary))
 
+  const [shopCreated, setShopCreated] = useState<boolean>(false)
 
   const validBenificiaries = benificiaries.filter(b => b.address && b.share)
 
-
-
   const isValidShop = account && handle && name && logo && tagline && description && isValidBeneficiary()
+
+  const [detailsCID, setDetailsCID] = useState<string>()
+  const { data: detailsIPFS, error: detailsIPFSError } = useIPFS(detailsCID)
+  const { data: shopId, error: shopIdError } = useShopId(handle)
+  const { data: shopInfoCache, error: shopInfoCacheError } = useShop(shopId)
+
+  useEffect(() => {
+    if (shopCreated && detailsIPFS && shopInfoCache) {
+      Router.push(`/shops/${handle}`)
+    }
+  }, [shopCreated, detailsIPFS, handle, shopInfoCache])
+
 
   function addBeneficiary(index: number, value: IBeneficiary) {
     const newBenificiary = [...benificiaries]
@@ -89,12 +100,13 @@ export default function CreateShop() {
     const detailsFile = new File([JSON.stringify(shopDesc)], "shopDesc.json")
     const allFiles = [logo, detailsFile]
 
-    const detailsFileName = `${handle}-shop-desc`
+    const detailsFileName = `@${handle}`
     const zipped = await zipFiles(allFiles, detailsFileName) as Blob
     setLoadingMsg("Upoading metadata to IPFS..")
 
     const response = await sendToEstuary(zipped, detailsFileName + '.zip')
     setLoadingMsg("Creating Contract..")
+    setDetailsCID(response.cid)
 
     const ownerPublicKey = cachedPublicKey || await ethereum.request({
       method: 'eth_getEncryptionPublicKey',
@@ -110,8 +122,7 @@ export default function CreateShop() {
     )
 
     if (success) {
-      setLoadingMsg("")
-      Router.push(`/shops/${handle}`)
+      setShopCreated(true)
     } else {
       setLoadingMsg("")
       setErrorMsg(error)
@@ -122,7 +133,7 @@ export default function CreateShop() {
     <div className="w-[640px] m-auto my-24">
       <div className="text-2xl pl-4 mb-4 text-gray-600">Create Shop</div>
       <div className="p-4 flex flex-col gap-4">
-        <div className="uppercase text-xs text-gray-400 my-2">Shop Information</div>
+        <div className="uppercase text-xs text-gray-500 my-2">Shop Information</div>
         <div className="flex flex-row text-gray-500 gap-3">
           <div className="text-sm w-56">Shop Handle *</div>
           <TextInput placeholder={'A unique handle to your shop'} setValue={setHandle} isAlpha={true} />
@@ -137,7 +148,7 @@ export default function CreateShop() {
             <FileUpload onlyImages={true} maxFiles={1} setFiles={(value) => setLogo(value.length ? value.slice(-1)[0] : undefined)} />
             {
               logo && <div className="text-sm text-gray-500 py-1 mt-2 rounded-md flex flex-row gap-1 items-center">
-                <Image src='/assets/picture.png' width={18} height={18} alt="Shop Logo" />
+                <Image src='/assets/picture.png' width={18} height={18} alt="Shop Logo" placeholder="blur" blurDataURL="data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mN8+B8AAscB4jINlWEAAAAASUVORK5CYII=" />
                 {trimString(logo.name, 50)}
               </div>
             }
@@ -151,12 +162,12 @@ export default function CreateShop() {
           <div className="text-sm w-56">Description *</div>
           <TextArea placeholder={'A brief description'} setValue={setDescription} />
         </div>
-        <div className="uppercase text-xs text-gray-400 my-2 mt-8">Beneficiaries and Shares (%) *</div>
+        <div className="uppercase text-xs text-gray-500 my-2 mt-8">Beneficiaries and Shares (%) *</div>
         {benificiaries.map((x, i) => (<div key={`benificiary-${i}`} className="flex flex-row text-gray-500 gap-3">
           <div className="text-sm w-56">Beneficiary {i + 1}</div>
           <BenificiaryInput setValue={(value) => addBeneficiary(i, value)} isOwner={(i == 0)} />
         </div>))}
-        <div className="uppercase text-xs text-gray-400 my-2 mt-8">Shop Contacts</div>
+        <div className="uppercase text-xs text-gray-500 my-2 mt-8">Shop Contacts</div>
         <div className="flex flex-row text-gray-500 gap-3">
           <div className="text-sm w-56">Website</div>
           <TextInput placeholder={'http://something.cool'} setValue={setWebsite} />

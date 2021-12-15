@@ -47,7 +47,7 @@ export function FileUpload({ files, onlyImages, maxFiles = 20, setFiles }: {
   return (
     <div>
       <div {...getRootProps()} className="mt-2 w-96 border-dashed border-2 rounded cursor-pointer hover:bg-gray-50">
-        <div className="text-gray-400 text-sm text-center p-12">
+        <div className="text-gray-500 text-sm text-center p-12">
           {uploadMsg}
         </div>
         <input {...getInputProps()} />

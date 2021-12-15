@@ -1,14 +1,16 @@
 import { useRouter } from 'next/router'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
-import { decryptFile, effectivePrice, toDateString, trimHash, unPackIPFS } from '../../../lib/utils'
+import { decryptFile, effectivePrice, generateEmbeddCode, toDateString, trimHash, unPackIPFS } from '../../../lib/utils'
 import { Button, Spinner } from '../../../components/UIComp'
 import useAsyncEffect from 'use-async-effect'
 import { ICart, IProductDesc } from '../../../lib/types'
 import saveAs from 'file-saver'
 import { useMetaMask } from 'metamask-react'
-import { useCachedPublicKey, useProduct, useShop, useShopId, useSale, useGuild, useIPFS } from '../../../lib/hooks'
+import { useCachedPublicKey, useProduct, useShop, useShopId, useSale, useGuild, useIPFS, useCredits } from '../../../lib/hooks'
 import { addRating, checkoutCart } from '../../../lib/contractCalls'
+import { ProductSkeleton } from '../../../components/ProductPreview'
+
 
 
 export default function Product() {
@@ -17,22 +19,16 @@ export default function Product() {
   const productStr = router.query.productId as string
   const productId = productStr?.split('-')[1]
   const { ethereum, account } = useMetaMask()
-  const { data: shopId, error: shopIdError } = useShopId(handle as string)
-  const { data: shopInfo, error: shopInfoError } = useShop(shopId)
-  const { data: cachedPublicKey, error: cachedPubilcKey } = useCachedPublicKey(account)
+  const { data: shopId } = useShopId(handle as string)
+  const { data: shopInfo } = useShop(shopId)
+  const { data: cachedPublicKey } = useCachedPublicKey(account)
   const [rating, setRating] = useState(0)
-  const { data: guildInfo, error: guildInfoError } = useGuild()
+  const { data: guildInfo } = useGuild()
+  const { data: buyerCredits } = useCredits(account)
+  const [redeemingCredits, setRedeemingCredits] = useState(parseFloat('0'))
 
-
-  const { data: sale, error: saleError } = useSale(
-    shopId,
-    parseInt(productId as string),
-    account || undefined
-  )
-  const { data: productInfo, error: productInfoError } = useProduct(
-    shopId,
-    parseInt(productId as string)
-  )
+  const { data: sale, mutate: mutateSale } = useSale(shopId, parseInt(productId as string), account)
+  const { data: productInfo, mutate: mutateProduct } = useProduct(shopId, parseInt(productId as string))
 
   const isSeller = (account?.toLowerCase() === shopInfo?.owner.toLowerCase())
 
@@ -45,6 +41,8 @@ export default function Product() {
 
   const { data: descIPFS, error: descIPFSError } = useIPFS(productInfo?.detailsCID)
   const { data: filesIPFS, error: filesIPFSError } = useIPFS(productInfo?.contentCID)
+
+  const finalPrice = effectivePrice(productInfo?.price!, guildInfo?.ratingReward!, guildInfo?.serviceTax!)
 
   useAsyncEffect(async () => {
     if (descIPFS) {
@@ -69,34 +67,74 @@ export default function Product() {
 
   function BuyOptions() {
     return (
-      <div className="flex flex-row gap-2">
-        <Button text="Buy Now" isPrimary={true} onClick={buyNow} />
-      </div>
-    )
-  }
-
-  function SellerOptions() {
-    return (
-      <div className="flex flex-row gap-4 items-center">
-        <Button text="Download" />
-        <div className='text-purple-800 text-sm'>
-          {productInfo?.totalRevenue} MATIC earned so far
+      <div>
+        <div className="flex flex-row gap-2 items-center">
+          <Button text="Buy Now" isPrimary={true} onClick={buyNow} />
+          {buyerCredits && <div>
+            <div className='text-sm text-gray-500'>
+              {buyerCredits - redeemingCredits} MATIC credits avaibale.
+              {(buyerCredits - redeemingCredits)
+                ? <span className='text-purple-800 ml-2' onClick={() => setRedeemingCredits(buyerCredits)}>Redeem Now</span>
+                : ''
+              }
+            </div>
+          </div>}
         </div>
       </div>
     )
   }
 
+  function SellerOptions() {
+
+    const [showCopied, setShopCopied] = useState(false)
+    async function handleClick() {
+      const code = generateEmbeddCode(shopId!, parseInt(productId), finalPrice)
+      const cb = navigator.clipboard
+      await cb.writeText(code)
+      setShopCopied(true)
+      setTimeout(() => {
+        setShopCopied(false)
+      }, 2000)
+    }
+    return (
+      <div>
+        <div className="flex flex-row gap-4 items-center">
+          <Button text="Download" onClick={() => { downloadFile(true) }} />
+          <div className='text-purple-800 text-sm'>
+            {productInfo?.totalRevenue} MATIC earned so far
+          </div>
+        </div>
+        <div className='mt-4 flex flex-row items-center text-gray-500 text-sm'>
+          Click <span className='text-purple-800 mx-1 hover:underline cursor-pointer' onClick={handleClick}>here</span> to copy embedd code to add this to your website
+        </div>
+        {showCopied && <div className='text-gray-500 text-sm mt-2'>Copied Embedd Code!</div>}
+      </div>
+    )
+  }
+
   async function addSaleRating(rating: number) {
-    await addRating(
+    setErrorMsg("")
+    const { success, error } = await addRating(
       shopId as number,
       sale?.saleId as number,
       rating,
       ethereum
     )
+    if (success) {
+      mutateSale()
+    } else {
+      setLoadingMsg("")
+      setErrorMsg(error)
+    }
   }
 
-  function PostSaleOptions() {
+  function PostSaleOptions({ currRating }: { currRating: number }) {
     const ratingList = new Array(4).fill(0)
+    const [ratingIndex, setRatingIndex] = useState(currRating)
+
+    useEffect(() => {
+      if (currRating) setRatingIndex(currRating)
+    }, [currRating])
 
     return (
       <div>
@@ -106,10 +144,10 @@ export default function Product() {
         </div>
         <div className="flex flex-row gap-1 mt-3 ml-1 items-center">
           {ratingList.map((_, i) => (
-            <Image key={'rating-' + i + 1} src={`/assets/rating_${i}.png`} width={24} height={24} alt="" className={`rounded-full cursor-pointer ${rating ? 'hover:grayscale' : 'hover:grayscale-0'} ${rating === i + 1 ? 'hover:grayscale-0' : 'grayscale'}`}
+            <Image key={'rating-' + i + 1} src={`/assets/rating_${i}.png`} width={24} height={24} alt="" className={`rounded-full cursor-pointer ${ratingIndex ? 'hover:grayscale' : 'hover:grayscale-0'} ${ratingIndex === i + 1 ? 'hover:grayscale-0' : 'grayscale'}`}
               onClick={() => {
-                if (!rating) {
-                  setRating(i + 1)
+                if (!ratingIndex) {
+                  setRatingIndex(i + 1)
                   addSaleRating(i + 1)
                 }
               }}
@@ -129,15 +167,16 @@ export default function Product() {
       if (sale.rating) {
         setRating(sale.rating)
       }
-      console.log(sale.rating, 'rating')
+      mutateProduct()
     }
-  }, [sale])
+  }, [sale, mutateProduct])
 
-  async function downloadFile() {
-    if (filesIPFS && sale) {
+
+  async function downloadFile(isSeller = false) {
+    if (filesIPFS && (sale || isSeller)) {
       const license = await ethereum.request({
         method: 'eth_decrypt',
-        params: [sale.unlockedLicense, account]
+        params: [isSeller ? productInfo?.sellerLicense : sale?.unlockedLicense, account]
       })
       const decrypted = await decryptFile(filesIPFS, license)
       saveAs(decrypted, `${productDesc?.name}.zip`)
@@ -148,7 +187,7 @@ export default function Product() {
     const cartItem: ICart = {
       shopId: shopId as number,
       productId: parseInt(productId as string),
-      price: effectivePrice(productInfo?.price!, guildInfo?.ratingReward!, guildInfo?.serviceTax!)
+      price: finalPrice
     }
     setLoadingMsg('Requesting Product..')
     const buyerPublicKey = cachedPublicKey || await ethereum.request({
@@ -166,20 +205,20 @@ export default function Product() {
     } else {
       setLoadingMsg("")
       setErrorMsg(error)
+      setRating(0)
     }
   }
 
   return (
-    <div> {productInfo && productDesc && shopInfo && guildInfo &&
-      <div className="flex flex-row gap-24 mt-16">
+    (productInfo && productDesc && shopInfo && guildInfo)
+      ? <div className="flex flex-row gap-24 mt-16">
         <div className="w-[450px] ml-36 mt-8">
           <div className="border rounded-xl h-[600px]">
-            {previewStr && <Image src={previewStr[currPreview]} width={450} height={600} objectFit="cover" alt="" className="rounded-xl" />
-            }
+            <Image src={previewStr?.at(currPreview) || '/'} width={450} height={600} objectFit="cover" alt="" className="rounded-xl" placeholder="blur" blurDataURL="data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mN8+B8AAscB4jINlWEAAAAASUVORK5CYII=" />
           </div>
           <div className="flex flex-row gap-2 justify-center mt-4">
             {productDesc.preview.map((x, i) => (
-              <div className={`w-3 h-3 cursor-pointer hover:bg-purple-800 rounded-full border-[2px] ${i === currPreview ? 'border-purple-800 bg-purple-800' : 'border-white bg-gray-300'}`} key={`dot-${i}`} onClick={() => setCurrPreview(i)}></div>
+              <div className={`w-2 h-2 cursor-pointer hover:bg-purple-600 rounded-full border-[2px] ${i === currPreview ? 'border-purple-600 bg-purple-600' : 'border-white bg-gray-300'}`} key={`dot-${i}`} onClick={() => setCurrPreview(i)}></div>
             ))}
           </div>
         </div>
@@ -187,13 +226,21 @@ export default function Product() {
           <div className="text-3xl text-gray-600 font-light">{productDesc.name}</div>
           <div className="my-2 text-gray-500">
             @{shopInfo.handle}
-            <span className="text-gray-400 px-2">by</span>
-            <span className="text-gray-400 font-mono">
+            <span className="text-gray-500 px-2">by</span>
+            <span className="text-gray-500 font-mono">
               {trimHash(shopInfo.owner)}
             </span>
           </div>
           <div className="text-orange-800 my-4">
-            {effectivePrice(productInfo.price, guildInfo.serviceTax, guildInfo.ratingReward)} MATIC
+            <span className={`${redeemingCredits ? 'line-through text-gray-500' : ''}`}>
+              {finalPrice} MATIC
+            </span>
+            {redeemingCredits
+              ? <span className='ml-2'>
+                {finalPrice} MATIC
+              </span>
+              : ''
+            }
           </div>
           <div>
             {(productInfo.stock < 4294967295)
@@ -209,11 +256,14 @@ export default function Product() {
                 {productInfo.salesCount} Sold
               </span>
             }
-            <span className="text-gray-400 text-sm">
+            <span className="text-gray-500 text-sm">
               Listed on {toDateString(productInfo.creationTime, true)}
             </span>
           </div>
-          <div className="flex flex-row gap-4 my-8 text-gray-400 text-xs items-center">
+          <div className='text-gray-500 mt-5 text-sm w-96'>
+            ✅ Content is securely stored on IPFS and backed by Filecoin Deals. You can verify status <a href={`https://estuary.tech/verify-cid?cid=${productInfo.contentCID}`} target="_blank" rel="noreferrer" className='text-purple-800 hover:underline'>here</a>
+          </div>
+          <div className="flex flex-row gap-4 my-8 text-gray-500 text-xs items-center">
             {productInfo.ratingsPercent.map((rating, i) => (
               <div key={'rating-' + i} className="flex flex-row items-center">
                 <span className={`mr-1 ${Math.max(...productInfo.ratingsPercent) === rating && productInfo.ratingsCount ? 'text-orange-800' : ''}`}>
@@ -224,16 +274,15 @@ export default function Product() {
             ))}
             from {productInfo.ratingsCount} ratings
           </div>
-          {sale && <PostSaleOptions />}
+          {sale && <PostSaleOptions currRating={rating} />}
           {(!sale) && (!isSeller) && (productInfo.salesCount < productInfo.stock) && <BuyOptions />}
-          {(productInfo.salesCount === productInfo.stock) && <div className='text-red-800 text-sm mb-8'>Product is out of Stock :/</div>}
+          {(productInfo.salesCount === productInfo.stock) && (!sale) && <div className='text-red-800 text-sm mb-8'>Product is out of Stock :/</div>}
           {isSeller && <SellerOptions />}
           {loadingMsg && <div className='mt-8'><Spinner msg={loadingMsg} /></div>}
-          {errorMsg && <div className="text-red-500 text-sm mt-2">{errorMsg}</div>}
+          {errorMsg && <div className="text-red-500 text-sm mt-4">{errorMsg}</div>}
           <div className="text-sm w-[480px] text-gray-500 mt-8 leading-6">{productDesc.description}</div>
         </div>
       </div>
-    }
-    </div>
+      : <ProductSkeleton />
   )
 }

@@ -1,6 +1,7 @@
 import JSZip from "jszip"
 import config from "../config.json"
 import CryptoJS from "crypto-js"
+import { ethers } from "ethers"
 const sigUtil = require('@metamask/eth-sig-util')
 
 export function onlyUniqueObjects(array: any[], keyName: string) {
@@ -105,7 +106,6 @@ function convertWordArrayToUint8Array(wordArray: CryptoJS.lib.WordArray) {
   return uInt8Array
 }
 
-
 export function decryptFile(data: Blob, key: string): Promise<Blob> {
   return new Promise((resolve) => {
     var reader = new FileReader()
@@ -128,11 +128,58 @@ export function encryptStr(plainText: string, publicKey: string) {
   return encryptedText
 }
 
-
 export function toDateString(timestamp: number, onlyDate: boolean = false) {
   const date = new Date(timestamp * 1000)
   return (date.toDateString().slice(4) + (onlyDate
     ? ""
     : ' · ' + date.toString().slice(16, 21)
   ))
+}
+
+export function generateEmbeddCode(
+  shopId: number,
+  productId: number,
+  amount: number,
+) {
+  let iface = new ethers.utils.Interface([
+    "function checkoutCart((uint,uint,uint)[],string,uint256)",
+  ])
+  const sampleEncKey = Array(44).fill("0").join("")
+  const base64Enc = Buffer.from(sampleEncKey, "utf8").toString("base64")
+  let calldata = iface.encodeFunctionData("checkoutCart", [
+    [[shopId, productId, ethers.utils.parseEther(amount.toString())]],
+    base64Enc,
+    0,
+  ])
+  const callDataTemp = calldata.slice(0, 522)
+  return `
+  async function buyNow() {
+
+    let EncPublicKey = await ethereum.request({
+      method: "eth_getEncryptionPublicKey",
+      params: [ethereum.selectedAddress],
+    })
+    const base64Enc = Buffer.from(EncPublicKey, "utf8").toString("base64")
+
+    let hexPubKey = base64Enc
+      .split("")
+      .map((c) => c.charCodeAt(0).toString(16).padStart(2, "0"))
+      .join("")
+
+    const calldata = "${callDataTemp}" + hexPubKey.padEnd(128, "0")
+
+    const transactionParameters = {
+      to: "${config.guildAddress}",
+      from: ethereum.selectedAddress,
+      value: "${ethers.utils.parseEther(amount.toString())._hex}",
+      data: calldata,
+      chainId: "0x13881",
+    }
+
+    const txHash = await ethereum.request({
+      method: "eth_sendTransaction",
+      params: [transactionParameters],
+    })
+  }
+  `
 }

@@ -54,9 +54,9 @@ export function LibraryItem({ productInfo, saleInfo, shopInfo }: {
 
   return (
     <div>
-      {descIPFS && filesIPFS && guildInfo &&
+      {(descIPFS && filesIPFS && guildInfo) ?
         <div className="flex flex-row gap-4 my-8">
-          {previewStr && <Image src={previewStr[0]} width={150} height={200} objectFit="cover" alt="" className="rounded-xl shadow-2xl" />}
+          <Image src={previewStr?.at(0) || '/'} width={150} height={200} objectFit="cover" alt="" className="rounded-xl shadow-2xl" placeholder="blur" blurDataURL="data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mN8+B8AAscB4jINlWEAAAAASUVORK5CYII=" />
           <div className="flex flex-col">
             <div className="text-lg text-gray-600">
               {trimString(productDesc?.name, 15)}
@@ -68,17 +68,33 @@ export function LibraryItem({ productInfo, saleInfo, shopInfo }: {
             <div className="text-gray-500 text-sm mt-4">
               {effectivePrice(productInfo.price, guildInfo.ratingReward, guildInfo.serviceTax)} MATIC
             </div>
-            <div className="text-gray-400 text-sm mt-1">
+            <div className="text-gray-500 text-sm mt-1">
               Bought on {toDateString(saleInfo.saleDeadline).slice(0, -8)}
             </div>
             <div className="flex flex-row gap-2 mt-4">
               <Button text="Download" onClick={downloadFile} />
-              <Link href={`shops/${shopInfo.handle}/${productInfo.productId}`}>
+              <Link href={`shops/${shopInfo.handle}/product-${productInfo.productId}`}>
                 <a><Button text="View" isOutline={false} /></a>
               </Link>
             </div>
           </div>
-        </div>}
+        </div>
+        : <LibraryItemSkeleton />
+      }
     </div >
+  )
+}
+
+export function LibraryItemSkeleton() {
+  return (
+    <div className="animate-pulse flex flex-row gap-4 my-8">
+      <div className="bg-gray-200 w-36 rounded-xl h-48"></div>
+      <div className="flex flex-col gap-3 mt-4">
+        <div className="w-24 h-2 bg-gray-200"></div>
+        <div className="w-36 h-4 bg-gray-200"></div>
+        <div className="w-12 h-2 bg-gray-200"></div>
+        <div className="mt-8 w-24 h-6 bg-gray-200"></div>
+      </div>
+    </div>
   )
 }

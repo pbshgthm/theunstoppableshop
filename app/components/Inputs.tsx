@@ -164,10 +164,10 @@ export function Toggle({ label, setValue, checked }: {
 
   return (
     <div className="flex flex-row gap-4 items-center my-2 select-none cursor-pointer">
-      <div className={`w-8 h-5 ${isChecked ? 'bg-purple-800' : 'bg-gray-300'} rounded-full p-0.5`} onClick={() => setIsChecked(!isChecked)}>
+      <div className={`w-8 h-5 ${isChecked ? 'bg-purple-600' : 'bg-gray-300'} rounded-full p-0.5`} onClick={() => setIsChecked(!isChecked)}>
         <div className={`w-4 h-4 bg-white rounded-full ${isChecked ? 'float-right' : ''}`}></div>
       </div>
-      <div className={`${isChecked ? 'text-gray-600' : 'text-gray-400'}`}>{label}</div>
+      <div className={`${isChecked ? 'text-gray-600' : 'text-gray-500'}`}>{label}</div>
     </div>
   )
 }

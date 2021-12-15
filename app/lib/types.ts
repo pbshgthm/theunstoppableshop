@@ -55,6 +55,7 @@ export interface ICart {
 export interface ISaleInfo {
   saleId: number,
   buyer: string,
+  buyerPublicKey: string,
   productId: number,
   amount: number,
   saleDeadline: number,

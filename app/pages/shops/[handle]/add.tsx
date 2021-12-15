@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { Spinner, Button } from '../../../components/UIComp'
 import { effectivePrice, encryptFile, encryptStr, sendToEstuary, trimString, zipFiles } from '../../../lib/utils'
 import { useMetaMask } from 'metamask-react'
-import { useApiPublicKey, useCachedPublicKey, useGuild, useShopId } from '../../../lib/hooks'
+import { useApiPublicKey, useCachedPublicKey, useGuild, useIPFS, useShopId } from '../../../lib/hooks'
 import { addProduct } from '../../../lib/contractCalls'
 
 export default function AddProduct() {
@@ -19,6 +19,21 @@ export default function AddProduct() {
   const { data: apiPubKey, error: apiPubKeyError } = useApiPublicKey()
   const { data: guildInfo, error: guildInfoError } = useGuild()
 
+  const [productCreated, setProductCreated] = useState(false)
+
+  const [descCID, setDescCID] = useState('')
+  const [filesCID, setFilesCID] = useState('')
+
+  const { data: descIPFS, error: descIPFSError } = useIPFS(descCID)
+  const { data: filesIPFS, error: filesIPFSError } = useIPFS(filesCID)
+
+  useEffect(() => {
+    if (descIPFS && filesIPFS && productCreated) {
+      router.push(`/shops/${handle}`)
+    }
+  }, [descIPFS, filesIPFS, productCreated, router, handle])
+
+  useEffect
 
   const [name, setName] = useState<string>()
   const [description, setDescription] = useState<string>()
@@ -62,7 +77,6 @@ export default function AddProduct() {
     setPreview(preview?.filter((_, i) => i !== index))
   }
 
-
   async function initAddProduct() {
     if (!isValidProduct) return
     const productDesc = {
@@ -75,21 +89,22 @@ export default function AddProduct() {
     const detailsJSON = new File([JSON.stringify(productDesc)], "productDesc.json")
     const detailsFiles = [...preview, detailsJSON]
 
-    const detailsFileName = `${handle}-${trimString(name, 5)}-product-desc`
+    const detailsFileName = `@${handle}-${trimString(name, 5)}-desc`
     const detailsZip = await zipFiles(detailsFiles, detailsFileName) as Blob
 
 
     const descResponse = await sendToEstuary(detailsZip, detailsFileName + '.zip')
     setLoadingMsg("Uploading encrypting files to IPFS..")
+    setDescCID(descResponse.cid)
 
-
-    const productFileName = `${handle}-${trimString(name, 5)}-files`
+    const productFileName = `@${handle}-${trimString(name, 5)}-files`
     const productFileZip = await zipFiles(files, productFileName) as Blob
 
     const { data: encrypted, key: licenseKey } = await encryptFile(productFileZip)
 
     const productResponse = await sendToEstuary(encrypted, productFileName + '.zip')
     setLoadingMsg("Calling Contract..")
+    setFilesCID(productResponse.cid)
 
     const lockedLicense = encryptStr(licenseKey, apiPubKey!)
     const sellerLicense = encryptStr(licenseKey, cachedPubKey!)
@@ -101,11 +116,13 @@ export default function AddProduct() {
       sellerLicense,
       price.toString(),
       unlimitedStock ? 4294967295 : stock!,
+      '0x0000000000000000000000000000000000000000',
+      0,
+      '',
       ethereum
     )
     if (success) {
-      setLoadingMsg("")
-      router.push(`/shops/${handle}`)
+      setProductCreated(true)
     } else {
       setLoadingMsg("")
       setErrorMsg(error)
@@ -116,7 +133,7 @@ export default function AddProduct() {
     <div className="w-[640px] m-auto my-24">
       <div className="text-2xl pl-4 mb-4 text-gray-600">Add Product</div>
       <div className="p-4 flex flex-col gap-4">
-        <div className="uppercase text-xs text-gray-400 my-2">Product Information</div>
+        <div className="uppercase text-xs text-gray-500 my-2">Product Information</div>
         <div className="flex flex-row text-gray-500 gap-3">
           <div className="text-sm w-56">Product Name *</div>
           <TextInput placeholder={'Product Name'} setValue={setName} />
@@ -129,7 +146,7 @@ export default function AddProduct() {
           <div className="text-sm w-56">Price *</div>
           <div>
             <NumberInput placeHolder="0.000000 MATIC" setValue={setPrice} isDecimal={true} />
-            <div className="text-gray-400 text-xs mt-2 w-96">
+            <div className="text-gray-500 text-xs mt-2 w-96">
               Effective price : <span className='text-purple-800'>
                 {effectivePrice((price || 0), (guildInfo?.ratingReward || 0), (guildInfo?.serviceTax || 0))}
               </span> MATIC,  including {(guildInfo?.ratingReward || 0)} MATIC Rating Reward + {(guildInfo?.serviceTax || 0)} MATIC service fee.
@@ -148,10 +165,10 @@ export default function AddProduct() {
           <div>
             <FileUpload files={preview} onlyImages={true} maxFiles={5} setFiles={setPreview} />
             <div className="flex flex-row gap-2 mt-2">
-              {previewStr && previewStr.map((file, index) =>
+              {previewStr.map((file, index) =>
                 <div key={index} className="group cursor-pointer" onClick={() => removePreview(index)}>
                   <div className="border rounded group-hover:border-red-500 w-[72px] h-[72px]">
-                    <Image src={file} alt="" width={72} height={72} objectFit="cover" className="rounded border" />
+                    <Image src={file} alt="" width={72} height={72} objectFit="cover" className="rounded border" placeholder="blur" blurDataURL="data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mN8+B8AAscB4jINlWEAAAAASUVORK5CYII=" />
                   </div>
                   <div className="text-xs text-red-700 invisible group-hover:visible text-center">Remove</div>
                 </div>
@@ -163,12 +180,12 @@ export default function AddProduct() {
             </div>
           </div>
         </div>
-        <div className="uppercase text-xs text-gray-400 my-2">Product Files</div>
+        <div className="uppercase text-xs text-gray-500 my-2">Product Files</div>
         <div className="flex flex-row text-gray-500 gap-3" >
           <div className="text-sm w-56">Product Files *</div>
           <div>
             <FileUpload setFiles={setFiles} />
-            <div className="text-sm text-gray-400 mt-4 mb-2 w-96 whitespace-normal">
+            <div className="text-sm text-gray-500 mt-4 mb-2 w-96 whitespace-normal">
               Uploaded Files : ({files.length})
             </div>
             <div>
