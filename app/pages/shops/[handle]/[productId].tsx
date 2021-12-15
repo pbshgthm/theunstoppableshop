@@ -44,6 +44,8 @@ export default function Product() {
 
   const finalPrice = effectivePrice(productInfo?.price!, guildInfo?.ratingReward!, guildInfo?.serviceTax!)
 
+  console.log(sale, productInfo, 'salee')
+
   useAsyncEffect(async () => {
     if (descIPFS) {
       const descFileDict = await unPackIPFS(descIPFS)
@@ -139,7 +141,7 @@ export default function Product() {
     return (
       <div>
         <div className="flex flex-row gap-2 items-center">
-          <Button text="Download" isPrimary={true} onClick={downloadFile} />
+          <Button text="Download" isPrimary={true} onClick={() => downloadFile(false)} />
           <div className="text-gray-500 text-xs">You’ve purchased this product</div>
         </div>
         <div className="flex flex-row gap-1 mt-3 ml-1 items-center">

@@ -35,6 +35,7 @@ export interface IProductInfo {
   productId: number,
   contentCID: string,
   detailsCID: string,
+  lockedLicense: string,
   price: number,
   stock: number,
   salesCount: number,
