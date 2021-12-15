@@ -152,7 +152,7 @@ export default function Product() {
   }
 
   useEffect(() => {
-    if (sale) {
+    if (sale?.unlockedLicense) {
       setLoadingMsg('')
       setErrorMsg('')
       if (sale.rating) {
