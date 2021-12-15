@@ -1,9 +1,7 @@
-import { ethers } from "ethers"
-import config from "../config.json"
-import { IBeneficiary, ICart } from "./types"
-import guildABI from "../lib/guildABI.json"
-
-
+import { ethers } from "ethers";
+import config from "../config.json";
+import { IBeneficiary, ICart } from "./types";
+import guildABI from "../lib/guildABI.json";
 
 export async function createShop(
   shopName: string,
@@ -12,27 +10,34 @@ export async function createShop(
   ownerPublicKey: string,
   ethereum: ethers.providers.ExternalProvider
 ) {
-  const beneficiariesList = beneficiaries.map(b => [b.address, b.share])
-  const signer = new ethers.providers.Web3Provider(ethereum).getSigner()
-  const guild = new ethers.Contract(config.guildAddress, guildABI, signer)
+  const beneficiariesList = beneficiaries.map((b) => [b.address, b.share]);
+  const signer = new ethers.providers.Web3Provider(ethereum).getSigner();
+  const guild = new ethers.Contract(config.guildAddress, guildABI, signer);
   try {
-    const txn = await guild.createShop(shopName, detailsCID, beneficiariesList, ownerPublicKey)
-    await txn.wait()
-    return { success: true, error: '' }
+    const txn = await guild.createShop(
+      shopName,
+      detailsCID,
+      beneficiariesList,
+      ownerPublicKey
+    );
+    await txn.wait();
+    return { success: true, error: "" };
   } catch (err) {
-    const error = err as any
-    let errorMessage = ''
+    const error = err as any;
+    let errorMessage = "";
     try {
-      errorMessage = error.data.message.replace('execution reverted: ', '')
+      errorMessage = error.data.message.replace("execution reverted: ", "");
     } catch {
-      errorMessage = error.message
-      if (errorMessage === 'MetaMask Tx Signature: User denied transaction signature.')
-        errorMessage = 'You\'ev denied transaction signature :('
+      errorMessage = error.message;
+      if (
+        errorMessage ===
+        "MetaMask Tx Signature: User denied transaction signature."
+      )
+        errorMessage = "You'ev denied transaction signature :(";
     }
-    return { success: false, error: errorMessage }
+    return { success: false, error: errorMessage };
   }
 }
-
 
 export async function addProduct(
   shopId: number,
@@ -41,10 +46,13 @@ export async function addProduct(
   sellerLicense: string,
   price: string,
   stock: number,
+  discountAddress: string,
+  discountPercent: number,
+  encDiscountKey: string,
   ethereum: ethers.providers.ExternalProvider
 ) {
-  const signer = new ethers.providers.Web3Provider(ethereum).getSigner()
-  const guild = new ethers.Contract(config.guildAddress, guildABI, signer)
+  const signer = new ethers.providers.Web3Provider(ethereum).getSigner();
+  const guild = new ethers.Contract(config.guildAddress, guildABI, signer);
 
   try {
     const txn = await guild.addProduct(
@@ -53,61 +61,106 @@ export async function addProduct(
       lockedLicense,
       sellerLicense,
       ethers.utils.parseEther(price),
-      stock
-    )
-    await txn.wait()
-    return { success: true, error: '' }
+      stock,
+      discountAddress,
+      discountPercent,
+      encDiscountKey
+    );
+    await txn.wait();
+    return { success: true, error: "" };
   } catch (err) {
-    const error = err as any
-    let errorMessage = ''
+    const error = err as any;
+    let errorMessage = "";
     try {
-      errorMessage = error.data.message.replace('execution reverted: ', '')
+      errorMessage = error.data.message.replace("execution reverted: ", "");
     } catch {
-      errorMessage = error.message
-      if (errorMessage === 'MetaMask Tx Signature: User denied transaction signature.')
-        errorMessage = 'You\'ev denied transaction signature :('
+      errorMessage = error.message;
+      if (
+        errorMessage ===
+        "MetaMask Tx Signature: User denied transaction signature."
+      )
+        errorMessage = "You'ev denied transaction signature :(";
     }
-    return { success: false, error: errorMessage }
+    return { success: false, error: errorMessage };
   }
 }
-
-export async function checkoutCart(
-  cartItems: ICart[],
+export async function requestSale(
+  shopId: number,
+  productId: number,
   publicKey: string,
+  discountCode: string,
   redeemCredits: number,
+  paymentAmount: number,
   ethereum: ethers.providers.ExternalProvider
 ) {
-  const signer = new ethers.providers.Web3Provider(ethereum).getSigner()
-  const guild = new ethers.Contract(config.guildAddress, guildABI, signer)
-  const cartItemsGuild = cartItems.map((item) => [
-    item.shopId,
-    item.productId,
-    ethers.utils.parseEther(item.price.toString()),
-  ])
-  const cartAmount = cartItems.reduce((acc, item) => acc + item.price, 0)
-  try {
-    const txn = await guild.checkoutCart(
-      cartItemsGuild,
-      publicKey,
-      redeemCredits,
-      { value: ethers.utils.parseEther(cartAmount.toString()) }
-    )
-    await txn.wait()
-    return { success: true, error: '' }
-  } catch (err) {
-    const error = err as any
-    let errorMessage = ''
-    try {
-      errorMessage = error.data.message.replace('execution reverted: ', '')
-    } catch {
-      errorMessage = error.message
-      if (errorMessage === 'MetaMask Tx Signature: User denied transaction signature.')
-        errorMessage = 'You\'ev denied transaction signature :('
-    }
-    return { success: false, error: errorMessage }
-  }
+  const signer = new ethers.providers.Web3Provider(ethereum).getSigner();
+  const guild = new ethers.Contract(config.guildAddress, guildABI, signer);
 
+  try {
+    const txn = await guild.requestSale(
+      shopId,
+      productId,
+      publicKey,
+      discountCode,
+      redeemCredits,
+      { value: ethers.utils.parseEther(paymentAmount.toString()) }
+    );
+    await txn.wait();
+    return { success: true, error: "" };
+  } catch (err) {
+    const error = err as any;
+    let errorMessage = "";
+    try {
+      errorMessage = error.data.message.replace("execution reverted: ", "");
+    } catch {
+      errorMessage = error.message;
+      if (
+        errorMessage ===
+        "MetaMask Tx Signature: User denied transaction signature."
+      )
+        errorMessage = "You'ev denied transaction signature :(";
+    }
+    return { success: false, error: errorMessage };
+  }
 }
+
+// export async function checkoutCart(
+//   cartItems: ICart[],
+//   publicKey: string,
+//   redeemCredits: number,
+//   ethereum: ethers.providers.ExternalProvider
+// ) {
+//   const signer = new ethers.providers.Web3Provider(ethereum).getSigner()
+//   const guild = new ethers.Contract(config.guildAddress, guildABI, signer)
+//   const cartItemsGuild = cartItems.map((item) => [
+//     item.shopId,
+//     item.productId,
+//     ethers.utils.parseEther(item.price.toString()),
+//   ])
+//   const cartAmount = cartItems.reduce((acc, item) => acc + item.price, 0)
+//   try {
+//     const txn = await guild.checkoutCart(
+//       cartItemsGuild,
+//       publicKey,
+//       redeemCredits,
+//       { value: ethers.utils.parseEther(cartAmount.toString()) }
+//     )
+//     await txn.wait()
+//     return { success: true, error: '' }
+//   } catch (err) {
+//     const error = err as any
+//     let errorMessage = ''
+//     try {
+//       errorMessage = error.data.message.replace('execution reverted: ', '')
+//     } catch {
+//       errorMessage = error.message
+//       if (errorMessage === 'MetaMask Tx Signature: User denied transaction signature.')
+//         errorMessage = 'You\'ev denied transaction signature :('
+//     }
+//     return { success: false, error: errorMessage }
+//   }
+
+// }
 
 export async function addRating(
   shopId: number,
@@ -115,9 +168,9 @@ export async function addRating(
   rating: number,
   ethereum: ethers.providers.ExternalProvider
 ) {
-  const signer = new ethers.providers.Web3Provider(ethereum).getSigner()
-  const guild = new ethers.Contract(config.guildAddress, guildABI, signer)
-  const txn = await guild.addRating(shopId, saleId, rating)
-  await txn.wait()
-  console.log("Rating added")
+  const signer = new ethers.providers.Web3Provider(ethereum).getSigner();
+  const guild = new ethers.Contract(config.guildAddress, guildABI, signer);
+  const txn = await guild.addRating(shopId, saleId, rating);
+  await txn.wait();
+  console.log("Rating added");
 }
