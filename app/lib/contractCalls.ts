@@ -77,6 +77,8 @@ export async function addProduct(
   }
 }
 
+
+/*
 export async function checkoutCart(
   cartItems: ICart[],
   publicKey: string,
@@ -113,6 +115,47 @@ export async function checkoutCart(
     return { success: false, error: errorMessage }
   }
 
+}
+*/
+
+export async function requestSale(
+  shopId: number,
+  productId: number,
+  publicKey: string,
+  discountCode: string,
+  redeemCredits: number,
+  effectiveAmount: number,
+  ethereum: ethers.providers.ExternalProvider
+) {
+  const signer = new ethers.providers.Web3Provider(ethereum).getSigner()
+  const guild = new ethers.Contract(config.guildAddress, guildABI, signer)
+
+  try {
+    const txn = await guild.requestSale(
+      shopId,
+      productId,
+      publicKey,
+      discountCode,
+      redeemCredits,
+      { value: ethers.utils.parseEther(effectiveAmount.toString()) }
+    )
+    await txn.wait()
+    return { success: true, error: "" }
+  } catch (err) {
+    const error = err as any
+    let errorMessage = ""
+    try {
+      errorMessage = error.data.message.replace("execution reverted: ", "")
+    } catch {
+      errorMessage = error.message
+      if (
+        errorMessage ===
+        "MetaMask Tx Signature: User denied transaction signature."
+      )
+        errorMessage = "You'ev denied transaction signature :("
+    }
+    return { success: false, error: errorMessage }
+  }
 }
 
 export async function addRating(

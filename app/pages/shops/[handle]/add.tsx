@@ -33,7 +33,6 @@ export default function AddProduct() {
     }
   }, [descIPFS, filesIPFS, productCreated, router, handle])
 
-  useEffect
 
   const [name, setName] = useState<string>()
   const [description, setDescription] = useState<string>()

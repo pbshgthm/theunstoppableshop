@@ -121,6 +121,21 @@
         "internalType": "uint256",
         "name": "_stock",
         "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_discountAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_discountPercent",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "_encDiscountKey",
+        "type": "string"
       }
     ],
     "name": "addProduct",
@@ -173,6 +188,40 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "_shopId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_productId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_buyerAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_signature",
+        "type": "bytes"
+      }
+    ],
+    "name": "calculateDiscountPercent",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "_oracle",
         "type": "address"
@@ -181,46 +230,6 @@
     "name": "changeOracle",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "shopId",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "productId",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "amount",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct Guild.CartItem[]",
-        "name": "_cartItems",
-        "type": "tuple[]"
-      },
-      {
-        "internalType": "string",
-        "name": "_publicKey",
-        "type": "string"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_redeemCredits",
-        "type": "uint256"
-      }
-    ],
-    "name": "checkoutCart",
-    "outputs": [],
-    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -341,6 +350,30 @@
         "internalType": "uint256[]",
         "name": "",
         "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_shopId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_productId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getProductDiscountKey",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
       }
     ],
     "stateMutability": "view",
@@ -765,6 +798,39 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_shopId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_productId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "_publicKey",
+        "type": "string"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_signature",
+        "type": "bytes"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_redeemCredits",
+        "type": "uint256"
+      }
+    ],
+    "name": "requestSale",
+    "outputs": [],
+    "stateMutability": "payable",
     "type": "function"
   },
   {

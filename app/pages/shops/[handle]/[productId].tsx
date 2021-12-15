@@ -8,7 +8,7 @@ import { ICart, IProductDesc } from '../../../lib/types'
 import saveAs from 'file-saver'
 import { useMetaMask } from 'metamask-react'
 import { useCachedPublicKey, useProduct, useShop, useShopId, useSale, useGuild, useIPFS, useCredits } from '../../../lib/hooks'
-import { addRating, checkoutCart } from '../../../lib/contractCalls'
+import { addRating, requestSale } from '../../../lib/contractCalls'
 import { ProductSkeleton } from '../../../components/ProductPreview'
 
 
@@ -196,10 +196,13 @@ export default function Product() {
       method: 'eth_getEncryptionPublicKey',
       params: [account]
     })
-    const { success, error } = await checkoutCart(
-      [cartItem],
+    const { success, error } = await requestSale(
+      shopId as number,
+      parseInt(productId as string),
       Buffer.from(buyerPublicKey as string).toString('base64'),
+      '0x266bc53048746775f1440944b9521309a2819c78276c15e03581db7a6bb818ed41d45f265f140c55408a4b08e54262e9303ccf125a68161af2b43603bfec3e541b',
       0,
+      finalPrice,
       ethereum
     )
     if (success) {
