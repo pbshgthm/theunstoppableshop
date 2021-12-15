@@ -1,59 +1,31 @@
-import type { NextPage } from 'next'
-import { useEvents, sendEther, sendLink, useLinkBalance } from '../lib/hooks'
-import { useMetaMask } from "metamask-react"
+import Image from 'next/image'
+import Link from 'next/link'
+import { Button } from '../components/UIComp'
 
-
-function Login() {
-
-  const { status, connect, account } = useMetaMask()
-
-  if (status === "initializing")
-    return <div>
-      syncing metamask...
-    </div>
-
-  if (status === "unavailable")
-    return <div>
-      metaMask not available
-    </div>
-
-  if (status === "notConnected")
-    return <button onClick={connect}>
-      connect to metamask
-    </button>
-
-  if (status === "connecting")
-    return <div>
-      connecting...
-    </div>
-
-  if (status === "connected")
-    return <div>
-      connected account: {account}
-    </div>
-
-  return null
-}
-
-
-const Home: NextPage = () => {
-  const { status, connect, account, ethereum } = useMetaMask()
-  const { data: linkBalance } = useLinkBalance(account || "")
-  const { data: events } = useEvents(account || '')
-
+export default function Index() {
   return (
     <div>
-      <Login />
-      <br /><br />
-      link Balance : {linkBalance}
-      <br /><br /><br />
-      <button onClick={() => { sendLink(ethereum) }}>send link</button>
-      <br /><br /><br />
-      <button onClick={() => { sendEther(ethereum) }}>send ether</button>
-      <br /><br /><br />
-      <pre>{JSON.stringify(events, null, 2)}</pre>
+      <div className="mt-36 text-8xl m-auto font-bold text-center text-gray-700">
+        The <span className='text-purple-800 italic'>Unstoppable</span> Shop
+      </div>
+      <div className="text-center text-gray-700 w-[600px] m-auto mt-16">
+        The first truly decentralised digital marketplace, with no escrows, no platform risk - sell directly to your customers. Set up a shop once and earn forever. <span className='text-purple-800'>Here, or anywhere. Unstoppably.</span>
+      </div>
+      <div className='mt-12 flex flex-row gap-4 justify-center'>
+        <Link href="/discover">
+          <a><Button text="Discover" isPrimary={true} /></a>
+        </Link>
+        <Link href="/myshops/create">
+          <a><Button text="Create Shop" /></a>
+        </Link>
+      </div>
+      <div className="text-center text-sm text-gray-500 w-[600px] m-auto mt-16">
+        We use IPFS + FIlecoin to securely store your products so its always available, only for your customers. Our Chainlink Oracle, automatically creates a personalised license for buyers to access your products.
+      </div>
+      <div className="text-sm text-gray-500 text-center mt-16">Powered By</div>
+      <div className="m-auto text-center mt-4">
+        <Image src="/assets/poweredby.png" width={600} height={60} alt="poweredby" />
+      </div>
     </div>
   )
 }
-
-export default Home

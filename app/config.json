@@ -1,0 +1,7 @@
+{
+  "guildAddress": "0xA8bc7EE14DAb9F078914a059e33B90c42766C0aA",
+  "estuaryToken": "EST98d089e8-9712-4450-abc4-d23fd28a6cbfARY",
+  "estuaryEndpoint": "https://shuttle-4.estuary.tech/content/add",
+  "rpcProvider": "https://polygon-mumbai.g.alchemy.com/v2/9rE76R64EAB61z4CE3BTnMwza-7R4HiV",
+  "ipfsGateway": "https://cloudflare-ipfs.com/ipfs/"
+}
