@@ -120,6 +120,7 @@ export default function AddProduct() {
       '',
       ethereum
     )
+
     if (success) {
       setProductCreated(true)
     } else {

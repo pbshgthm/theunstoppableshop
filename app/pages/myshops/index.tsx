@@ -18,7 +18,7 @@ export default function MyShops() {
       {
         (shopList?.length === 0) &&
         <div>
-          <div className="text-sm text-purple-800 ml-28">
+          <div className="text-sm text-purple-800 ml-28 mt-12">
             {"You haven't created any shop yet."}
           </div>
         </div>

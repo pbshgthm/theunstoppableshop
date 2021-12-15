@@ -12,7 +12,6 @@ import { addRating, requestSale } from '../../../lib/contractCalls'
 import { ProductSkeleton } from '../../../components/ProductPreview'
 
 
-
 export default function Product() {
   const router = useRouter()
   const { handle } = router.query
@@ -25,7 +24,6 @@ export default function Product() {
   const [rating, setRating] = useState(0)
   const { data: guildInfo } = useGuild()
   const { data: buyerCredits } = useCredits(account)
-  const [redeemingCredits, setRedeemingCredits] = useState(parseFloat('0'))
 
   const { data: sale, mutate: mutateSale } = useSale(shopId, parseInt(productId as string), account)
   const { data: productInfo, mutate: mutateProduct } = useProduct(shopId, parseInt(productId as string))
@@ -39,12 +37,11 @@ export default function Product() {
   const [loadingMsg, setLoadingMsg] = useState<string>()
   const [errorMsg, setErrorMsg] = useState<string>()
 
-  const { data: descIPFS, error: descIPFSError } = useIPFS(productInfo?.detailsCID)
-  const { data: filesIPFS, error: filesIPFSError } = useIPFS(productInfo?.contentCID)
+  const { data: descIPFS } = useIPFS(productInfo?.detailsCID)
+  const { data: filesIPFS } = useIPFS(productInfo?.contentCID)
 
   const finalPrice = effectivePrice(productInfo?.price!, guildInfo?.ratingReward!, guildInfo?.serviceTax!)
 
-  console.log(sale, productInfo, 'salee')
 
   useAsyncEffect(async () => {
     if (descIPFS) {
@@ -72,15 +69,6 @@ export default function Product() {
       <div>
         <div className="flex flex-row gap-2 items-center">
           <Button text="Buy Now" isPrimary={true} onClick={buyNow} />
-          {buyerCredits && <div>
-            <div className='text-sm text-gray-500'>
-              {buyerCredits - redeemingCredits} MATIC credits avaibale.
-              {(buyerCredits - redeemingCredits)
-                ? <span className='text-purple-800 ml-2' onClick={() => setRedeemingCredits(buyerCredits)}>Redeem Now</span>
-                : ''
-              }
-            </div>
-          </div>}
         </div>
       </div>
     )
@@ -114,12 +102,12 @@ export default function Product() {
     )
   }
 
-  async function addSaleRating(rating: number) {
+  async function addSaleRating(curRrating: number) {
     setErrorMsg("")
     const { success, error } = await addRating(
       shopId as number,
       sale?.saleId as number,
-      rating,
+      curRrating,
       ethereum
     )
     if (success) {
@@ -150,6 +138,7 @@ export default function Product() {
               onClick={() => {
                 if (!ratingIndex) {
                   setRatingIndex(i + 1)
+                  setRating(i + 1)
                   addSaleRating(i + 1)
                 }
               }}
@@ -186,11 +175,7 @@ export default function Product() {
   }
 
   async function buyNow() {
-    const cartItem: ICart = {
-      shopId: shopId as number,
-      productId: parseInt(productId as string),
-      price: finalPrice
-    }
+
     setLoadingMsg('Requesting Product..')
     const buyerPublicKey = cachedPublicKey || await ethereum.request({
       method: 'eth_getEncryptionPublicKey',
@@ -237,15 +222,9 @@ export default function Product() {
             </span>
           </div>
           <div className="text-orange-800 my-4">
-            <span className={`${redeemingCredits ? 'line-through text-gray-500' : ''}`}>
+            <span className="text-gray-500">
               {finalPrice} MATIC
             </span>
-            {redeemingCredits
-              ? <span className='ml-2'>
-                {finalPrice} MATIC
-              </span>
-              : ''
-            }
           </div>
           <div>
             {(productInfo.stock < 4294967295)
@@ -279,8 +258,8 @@ export default function Product() {
             ))}
             from {productInfo.ratingsCount} ratings
           </div>
-          {sale && <PostSaleOptions currRating={rating} />}
-          {(!sale) && (!isSeller) && (productInfo.salesCount < productInfo.stock) && <BuyOptions />}
+          {sale?.unlockedLicense && <PostSaleOptions currRating={rating} />}
+          {(!sale?.unlockedLicense) && (!isSeller) && (productInfo.salesCount < productInfo.stock) && <BuyOptions />}
           {(productInfo.salesCount === productInfo.stock) && (!sale) && <div className='text-red-800 text-sm mb-8'>Product is out of Stock :/</div>}
           {isSeller && <SellerOptions />}
           {loadingMsg && <div className='mt-8'><Spinner msg={loadingMsg} /></div>}

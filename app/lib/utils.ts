@@ -3,6 +3,8 @@ import config from "../config.json"
 import CryptoJS from "crypto-js"
 import { ethers } from "ethers"
 const sigUtil = require('@metamask/eth-sig-util')
+const publicKeyToAddress = require('ethereum-public-key-to-address')
+const keccak256 = require('keccak256')
 
 export function onlyUniqueObjects(array: any[], keyName: string) {
   const uniqueKeys: any[] = []

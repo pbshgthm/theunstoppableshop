@@ -127,6 +127,7 @@ export async function requestSale(
   effectiveAmount: number,
   ethereum: ethers.providers.ExternalProvider
 ) {
+
   const signer = new ethers.providers.Web3Provider(ethereum).getSigner()
   const guild = new ethers.Contract(config.guildAddress, guildABI, signer)
 
@@ -136,7 +137,7 @@ export async function requestSale(
       productId,
       publicKey,
       discountCode,
-      redeemCredits,
+      ethers.utils.parseEther(redeemCredits.toString()),
       { value: ethers.utils.parseEther(effectiveAmount.toString()) }
     )
     await txn.wait()
