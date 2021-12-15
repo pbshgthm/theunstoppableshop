@@ -146,6 +146,7 @@ async function main() {
     0,
     "bW5KZDNRSWZFREIrcFlDOHJ2Nk55dTNvM3pqUnlCbHpDZ3dMb1pTQXBFRT0=",
     "0x266bc53048746775f1440944b9521309a2819c78276c15e03581db7a6bb818ed41d45f265f140c55408a4b08e54262e9303ccf125a68161af2b43603bfec3e541b",
+    0,
     { value: ethers.utils.parseEther("0.00205") }
   );
 

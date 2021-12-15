@@ -315,13 +315,24 @@ contract Guild {
         uint256 _shopId,
         uint256 _productId,
         string memory _publicKey,
-        bytes memory _signature
+        bytes memory _signature,
+        uint256 _redeemCredits
     ) external payable {
         require(
-            msg.value - ratingReward - serviceTax > 0,
+            msg.value - ratingReward - serviceTax + _redeemCredits > 0,
             "amount not enough for taxes"
         );
+        publicKeys[msg.sender] = _publicKey;
+
         uint256 amount = msg.value - ratingReward - serviceTax;
+
+        require(
+            buyerCredits[msg.sender] >= _redeemCredits,
+            "Not enough credits"
+        );
+        buyerCredits[msg.sender] -= _redeemCredits;
+        amount += _redeemCredits;
+
         IShop(shops[_shopId]).requestSale{value: amount}(
             msg.sender,
             _productId,
