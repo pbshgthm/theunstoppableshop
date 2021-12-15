@@ -2,16 +2,22 @@
 
 pragma solidity ^0.8.7;
 
+interface ISignature {
+    function getSigner(address _message, bytes memory _signature)
+        external
+        view
+        returns (address);
+}
+
 contract Shop {
     struct Ratings {
         uint32[4] ratingsCount;
     }
 
     struct Beneficiary {
-        address addr;
+        address payable addr;
         uint8 share;
     }
-
     struct Product {
         string[] contentCID;
         string lockedLicense;
@@ -22,6 +28,7 @@ contract Shop {
         uint256 creationTime;
         Ratings ratings;
         bool isAvailable;
+        string sellerLicense;
     }
 
     struct Sale {
@@ -39,7 +46,6 @@ contract Shop {
         address guild;
         address owner;
         string detailsCId;
-        uint256 shopBalance;
         string shopName;
         uint256 productsCount;
         uint256 salesCount;
@@ -68,9 +74,16 @@ contract Shop {
 
     Product[] products;
 
+    address constant signatureAddress =
+        0x049B99CC1a801b562e2BCCFB96DA0163d288249d;
+
     mapping(uint256 => Sale) sales;
     mapping(uint256 => uint256) openSaleIdToIndex;
 
+    mapping(uint256 => mapping(address => uint256))
+        public productDiscountPercent;
+
+    mapping(uint256 => string) public productDiscountKey;
     modifier onlyGuild() {
         require(
             msg.sender == shopInfo.guild,
@@ -86,17 +99,16 @@ contract Shop {
         string memory _detailsCId,
         Beneficiary[] memory _beneficiaries
     ) {
-        validateBeneficiary(_beneficiaries);
+        setBeneficiary(_beneficiaries);
+
         shopInfo = ShopInfo({
             guild: _guild,
             owner: _owner,
             detailsCId: _detailsCId,
-            shopBalance: 0,
             shopName: _shopName,
             productsCount: 0,
             salesCount: 0
         });
-        beneficiaries = _beneficiaries;
     }
 
     function updateShopDetails(string memory _detailsCId) external onlyGuild {
@@ -106,8 +118,12 @@ contract Shop {
     function addProduct(
         string[] memory _contentCID,
         string memory _lockedLicense,
+        string memory _sellerLicense,
         uint256 _price,
-        uint256 _stock
+        uint256 _stock,
+        address _discountAddress,
+        uint256 _discountPercent,
+        string memory _encDiscountKey
     ) external onlyGuild {
         require(
             _contentCID.length == 1,
@@ -124,9 +140,16 @@ contract Shop {
                 revenue: 0,
                 creationTime: block.timestamp,
                 ratings: Ratings(ratings),
-                isAvailable: true
+                isAvailable: true,
+                sellerLicense: _sellerLicense
             })
         );
+
+        productDiscountPercent[products.length - 1][
+            _discountAddress
+        ] = _discountPercent;
+
+        productDiscountKey[products.length - 1] = _encDiscountKey;
         shopInfo.productsCount++;
     }
 
@@ -146,7 +169,8 @@ contract Shop {
     function requestSale(
         address _buyer,
         uint256 _productId,
-        string memory _publicKey
+        string memory _publicKey,
+        bytes memory _signature
     ) external payable onlyGuild {
         require(_productId <= shopInfo.productsCount, "Product does not exist");
         require(
@@ -154,7 +178,19 @@ contract Shop {
             "Product is out of stock"
         );
         require(products[_productId].isAvailable, "Product is not available");
-        require(products[_productId].price <= msg.value, "Payment is too low");
+        address discountAddress = ISignature(signatureAddress).getSigner(
+            _buyer,
+            _signature
+        );
+        uint256 discountPercent = productDiscountPercent[_productId][
+            discountAddress
+        ];
+        uint256 discount = (products[_productId].price * discountPercent) / 100;
+
+        require(
+            products[_productId].price <= msg.value + discount,
+            "Payment is too low"
+        );
 
         sales[shopInfo.salesCount] = Sale({
             buyer: _buyer,
@@ -213,12 +249,27 @@ contract Shop {
         sales[_saleId].unlockedLicense = _unlockedLicense;
         sales[_saleId].status = SaleStatus.Completed;
         products[sales[_saleId].productId].revenue += sales[_saleId].amount;
+        products[sales[_saleId].productId].salesCount++;
+        makePayout(sales[_saleId].amount);
 
         openSaleIds[openSaleIdToIndex[_saleId]] = openSaleIds[
             openSaleIds.length - 1
         ];
         openSaleIds.pop();
         delete openSaleIdToIndex[_saleId];
+        makePayout(sales[_saleId].amount);
+    }
+
+    function makePayout(uint256 amount) internal {
+        for (uint256 i = 0; i < beneficiaries.length; i++) {
+            uint256 beneficiaryCut = ((beneficiaries[i].share) * amount) / 100;
+            (bool success, ) = beneficiaries[i].addr.call{
+                value: beneficiaryCut
+            }("");
+
+            // works without require
+            // require(success, "Error on withdraw");
+        }
     }
 
     function addRating(uint256 _saleId, RatingOptions _rating)
@@ -234,14 +285,11 @@ contract Shop {
         sales[_saleId].rating = _rating;
         sales[_saleId].status = SaleStatus.Rated;
         products[sales[_saleId].productId].ratings.ratingsCount[
-            uint256(_rating)
+            uint256(_rating) - 1
         ]++;
     }
 
-    function validateBeneficiary(Beneficiary[] memory _beneficiaries)
-        internal
-        pure
-    {
+    function setBeneficiary(Beneficiary[] memory _beneficiaries) internal {
         uint256 totalShare = 0;
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
             require(
@@ -252,21 +300,11 @@ contract Shop {
                 _beneficiaries[i].addr != address(0),
                 "beneficiary cannot be 0"
             );
+            beneficiaries.push(_beneficiaries[i]);
             totalShare += _beneficiaries[i].share;
         }
 
         require(totalShare == 100, "Total share must be 100%");
-    }
-
-    function withdrawBalance() external {
-        uint256 shopBalance = shopInfo.shopBalance;
-        shopInfo.shopBalance = 0;
-        for (uint256 i = 0; i < beneficiaries.length; i++) {
-            uint256 amount = (beneficiaries[i].share * shopBalance) / 100;
-
-            (bool success, ) = beneficiaries[i].addr.call{value: amount}("");
-            require(success, "Error on withdraw");
-        }
     }
 
     function getSale(uint256 _saleId) external view returns (Sale memory) {
@@ -281,8 +319,12 @@ contract Shop {
         return products[_productId];
     }
 
-    function getShopInfo() external view returns (ShopInfo memory) {
-        return shopInfo;
+    function getShopInfo()
+        external
+        view
+        returns (ShopInfo memory, Beneficiary[] memory)
+    {
+        return (shopInfo, beneficiaries);
     }
 
     function getOwner() external view returns (address) {
@@ -299,5 +341,25 @@ contract Shop {
 
     function getOpenSaleIds() external view returns (uint256[] memory) {
         return openSaleIds;
+    }
+
+    function getProducts() external view returns (Product[] memory) {
+        return products;
+    }
+
+    function getDiscountPercent(uint256 _productId, address _discountAddress)
+        external
+        view
+        returns (uint256)
+    {
+        return productDiscountPercent[_productId][_discountAddress];
+    }
+
+    function getProductDiscountKey(uint256 _productId)
+        external
+        view
+        returns (string memory)
+    {
+        return productDiscountKey[_productId];
     }
 }
