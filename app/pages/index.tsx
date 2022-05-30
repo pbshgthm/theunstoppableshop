@@ -24,7 +24,7 @@ export default function Index() {
       </div>
       <div className="text-sm text-gray-500 text-center mt-16">Powered By</div>
       <div className="m-auto text-center mt-4">
-        <Image src="/assets/poweredby.png" width={600} height={60} alt="poweredby" />
+        <Image src="/assets/poweredby.png" width={600} height={60} alt="poweredby icons" />
       </div>
     </div>
   )
